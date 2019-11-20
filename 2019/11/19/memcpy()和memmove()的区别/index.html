@@ -85,14 +85,14 @@
 <meta name="keywords" content="C">
 <meta property="og:type" content="article">
 <meta property="og:title" content="C库函数memcpy()和memmove()的区别">
-<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;19&#x2F;memcpy&#x2F;index.html">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;19&#x2F;memcpy()%E5%92%8Cmemmove()%E7%9A%84%E5%8C%BA%E5%88%AB&#x2F;index.html">
 <meta property="og:site_name" content="lwl的博客">
 <meta property="og:description" content="memcpy( )和memmove( )都是C语言中的库函数，在头文件string.h中。 其作用是从src内存中拷贝n个字节到dest内存区域中，原型分别如下: 12void *memcpy(void *dst, const void *src, size_t count);void *memmove(void *dst, const void *src, size_t count);  mem">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;19&#x2F;memcpy&#x2F;memory.png">
-<meta property="og:updated_time" content="2019-11-20T12:07:27.909Z">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;19&#x2F;memcpy()%E5%92%8Cmemmove()%E7%9A%84%E5%8C%BA%E5%88%AB&#x2F;memory.png">
+<meta property="og:updated_time" content="2019-11-20T12:24:36.313Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;19&#x2F;memcpy&#x2F;memory.png">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;11&#x2F;19&#x2F;memcpy()%E5%92%8Cmemmove()%E7%9A%84%E5%8C%BA%E5%88%AB&#x2F;memory.png">
 
 
 
@@ -122,7 +122,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2019/11/19/memcpy/"/>
+  <link rel="canonical" href="http://yoursite.com/2019/11/19/memcpy()和memmove()的区别/"/>
 
 
 
@@ -255,7 +255,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/19/memcpy/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/19/memcpy()%E5%92%8Cmemmove()%E7%9A%84%E5%8C%BA%E5%88%AB/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lwl">
@@ -327,7 +327,7 @@
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">memcpy</span><span class="params">(<span class="keyword">void</span> *dst, <span class="keyword">const</span> <span class="keyword">void</span> *src, <span class="keyword">size_t</span> count)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">memmove</span><span class="params">(<span class="keyword">void</span> *dst, <span class="keyword">const</span> <span class="keyword">void</span> *src, <span class="keyword">size_t</span> count)</span></span>;</span><br></pre></td></tr></table></figure>
 
 <h3 id="memcpy-和memmove-的区别"><a href="#memcpy-和memmove-的区别" class="headerlink" title="memcpy()和memmove()的区别"></a>memcpy()和memmove()的区别</h3><p>他们的作用是一样的，<strong>唯一的区别是，当内存发生局部重叠的时候，memmove保证拷贝的结果是正确的，memcpy不保证拷贝的结果的正确。</strong></p>
-<p><img src="/2019/11/19/memcpy/memory.png" alt="memory"></p>
+<p><img src="/2019/11/19/memcpy()%E5%92%8Cmemmove()%E7%9A%84%E5%8C%BA%E5%88%AB/memory.png" alt="memory"></p>
 <h3 id="memcpy-函数的实现"><a href="#memcpy-函数的实现" class="headerlink" title="memcpy()函数的实现"></a>memcpy()函数的实现</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">my_memcpy</span><span class="params">(<span class="keyword">void</span>* dst, <span class="keyword">const</span> <span class="keyword">void</span>* src, <span class="keyword">size_t</span> n)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">char</span> *tmp = (<span class="keyword">char</span>*)dst;</span><br><span class="line">    <span class="keyword">char</span> *s_src = (<span class="keyword">char</span>*)src;</span><br><span class="line">    <span class="keyword">while</span>(n--) &#123;</span><br><span class="line">        *tmp++ = *s_src++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="memmove-实现函数"><a href="#memmove-实现函数" class="headerlink" title="memmove()实现函数"></a>memmove()实现函数</h3><p>memmove就是针对第二种内存覆盖情形，对memcpy进行了改进</p>
@@ -369,8 +369,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/11/20/demo/" rel="prev" title="C库函数memcpy()和memmove()的区别">
-                C库函数memcpy()和memmove()的区别 <i class="fa fa-chevron-right"></i>
+              <a href="/2019/11/20/%E5%A6%82%E4%BD%95%E6%AD%A3%E7%A1%AE%E5%9C%B0%E5%88%A0%E9%99%A4vector%E4%B8%AD%E7%AC%A6%E5%90%88%E6%9D%A1%E4%BB%B6%E7%9A%84%E6%9F%90%E5%85%83%E7%B4%A0/" rel="prev" title="如何正确地删除vector中符合条件的某元素">
+                如何正确地删除vector中符合条件的某元素 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -452,7 +452,7 @@
               
                 <a href="/archives/%7C%7Carchive">
               
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">2</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>

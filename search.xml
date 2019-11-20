@@ -2,8 +2,9 @@
 <search>
   <entry>
     <title>my blog</title>
-    <url>/2019/11/19/my-blog/</url>
-    <content><![CDATA[<p>memcpy( )和memmove( )都是C语言中的库函数，在头文件string.h中，作用是从src内存中拷贝n个字节到dest内存区域中，原型分别如下:</p>
+    <url>/2019/11/19/C%E5%BA%93%E5%87%BD%E6%95%B0memcpy()%E5%92%8Cmemmove()%E7%9A%84%E5%8C%BA%E5%88%AB/</url>
+    <content><![CDATA[<p>memcpy( )和memmove( )都是C语言中的库函数，在头文件string.h中。</p>
+<p>其作用是从src内存中拷贝n个字节到dest内存区域中，原型分别如下:</p>
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">memcpy</span><span class="params">(<span class="keyword">void</span> *dst, <span class="keyword">const</span> <span class="keyword">void</span> *src, <span class="keyword">size_t</span> count)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">memmove</span><span class="params">(<span class="keyword">void</span> *dst, <span class="keyword">const</span> <span class="keyword">void</span> *src, <span class="keyword">size_t</span> count)</span></span>;</span><br></pre></td></tr></table></figure>
 
 <p>他们的作用是一样的，<strong>唯一的区别是，当内存发生局部重叠的时候，memmove保证拷贝的结果是正确的，memcpy不保证拷贝的结果的正确。</strong></p>
@@ -16,17 +17,7 @@
 
 ]]></content>
       <tags>
-        <tag>C,内存</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>test</title>
-    <url>/2019/11/19/test/</url>
-    <content><![CDATA[<h2 id="这是一篇测试文章"><a href="#这是一篇测试文章" class="headerlink" title="这是一篇测试文章"></a>这是一篇测试文章</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution4</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">bool</span> <span class="title">isBalanced</span><span class="params">(TreeNode *root)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> depth(root) != <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">depth</span><span class="params">(TreeNode *root)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (!root) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> left = depth(root-&gt;left);</span><br><span class="line">        <span class="keyword">if</span> (left == <span class="number">-1</span>) <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">int</span> right = depth(root-&gt;right);</span><br><span class="line">        <span class="keyword">if</span> (right == <span class="number">-1</span>) <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">abs</span>(left - right) &gt; <span class="number">1</span>) <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">max</span>(right, left) + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <tags>
-        <tag>test</tag>
+        <tag>-C</tag>
       </tags>
   </entry>
 </search>

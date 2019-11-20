@@ -15,6 +15,9 @@
 <figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span>* <span class="title">my_memmove</span><span class="params">(<span class="keyword">void</span>* dst, <span class="keyword">const</span> <span class="keyword">void</span>* src, <span class="keyword">size_t</span> n)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">char</span>* s_dst;</span><br><span class="line">    <span class="keyword">char</span>* s_src;</span><br><span class="line">    s_dst = (<span class="keyword">char</span>*)dst;</span><br><span class="line">    s_src = (<span class="keyword">char</span>*)src;</span><br><span class="line">    <span class="keyword">if</span>(s_dst&gt;s_src &amp;&amp; (s_src+n&gt;s_dst)) &#123;      <span class="comment">//第二种内存覆盖的情形。</span></span><br><span class="line">        <span class="comment">// 从后往前复制，防止出现内存覆盖的情形</span></span><br><span class="line">        s_dst = s_dst+n<span class="number">-1</span>;</span><br><span class="line">        s_src = s_src+n<span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">while</span>(n--) &#123;</span><br><span class="line">            *s_dst-- = *s_src--;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;<span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">while</span>(n--) &#123;</span><br><span class="line">            *s_dst++ = *s_src++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> dst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 ]]></content>
+      <tags>
+        <tag>C,内存</tag>
+      </tags>
   </entry>
   <entry>
     <title>test</title>

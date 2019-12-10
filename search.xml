@@ -3,8 +3,8 @@
   <entry>
     <title>CMU-15-445 Project1-任务1：可扩展的哈希表</title>
     <url>/2019/12/05/CMU-15-445-Project1-%E4%BB%BB%E5%8A%A11/</url>
-    <content><![CDATA[<h2 id="可扩展哈希表的介绍"><a href="#可扩展哈希表的介绍" class="headerlink" title="可扩展哈希表的介绍"></a>可扩展哈希表的介绍</h2><p><img src="/2019/12/05/CMU-15-445-Project1-%E4%BB%BB%E5%8A%A11/1.png" alt="1"></p>
-<p><img src="/2019/12/05/CMU-15-445-Project1-%E4%BB%BB%E5%8A%A11/2.png" alt="2"></p>
+    <content><![CDATA[<h2 id="可扩展哈希表的介绍"><a href="#可扩展哈希表的介绍" class="headerlink" title="可扩展哈希表的介绍"></a>可扩展哈希表的介绍</h2><p><img src="/2019/12/05/CMU-15-445-Project1-%E4%BB%BB%E5%8A%A11/2.png" alt="2"></p>
+<p><img src="/2019/12/05/CMU-15-445-Project1-%E4%BB%BB%E5%8A%A11/1.png" alt="1"></p>
 <p><img src="/2019/12/05/CMU-15-445-Project1-%E4%BB%BB%E5%8A%A11/3.png" alt="3"></p>
 <p><img src="/2019/12/05/CMU-15-445-Project1-%E4%BB%BB%E5%8A%A11/4.png" alt="4"></p>
 <h2 id="可扩展哈希表的实现"><a href="#可扩展哈希表的实现" class="headerlink" title="可扩展哈希表的实现"></a>可扩展哈希表的实现</h2><h3 id="可扩展哈希表类的基类HashTable"><a href="#可扩展哈希表类的基类HashTable" class="headerlink" title="可扩展哈希表类的基类HashTable"></a><strong>可扩展哈希表类的基类HashTable</strong></h3><p>有三个虚函数Find(), Remove(), Insert()</p>

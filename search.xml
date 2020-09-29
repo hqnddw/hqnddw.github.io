@@ -1,6 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>指针、数组和函数</title>
+    <url>/2020/09/21/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/</url>
+    <content><![CDATA[<p><strong>数组指针和指针数组</strong></p>
+<p><strong>数组指针</strong></p>
+<p>定义 int (*p)[n];</p>
+<p>()优先级高，首先说明p是一个指针，指向一个整型的一维数组，这个一维数组的长度是n，也可以说是p的步长。也就是说执行p+1时，p要跨过n个整型数据的长度</p>
+<p>如要将二维数组赋给一指针，应这样赋值：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> a[<span class="number">3</span>][<span class="number">4</span>];</span><br><span class="line"><span class="keyword">int</span> (*p)[<span class="number">4</span>]; <span class="comment">//该语句是定义一个数组指针，指向含4个元素的一维数组。</span></span><br><span class="line">p=a;        <span class="comment">//将该二维数组的首地址赋给p，也就是a[0]或&amp;a[0][0]</span></span><br><span class="line">p++;       <span class="comment">//该语句执行过后，也就是p=p+1;p跨过行a[0][]指向了行a[1][]</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>指针数组</strong></p>
+<p>定义 int *p[n];</p>
+<p>[]优先级高，先与p结合成为一个数组，再由int*说明这是一个整型指针数组，它有n个指针类型的数组元素。这里执行p+1是错误的，这样赋值也是错误的：p=a；因为p是个不可知的表示，只存在p[0]、p[1]、p[2]…p[n-1],而且它们分别是指针变量可以用来存放变量地址。但可以这样 *p=a; 这里*p表示指针数组第一个元素的值，a的首地址的值</p>
+<p>如要将二维数组赋给一指针数组:</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> *p[<span class="number">3</span>];</span><br><span class="line"><span class="keyword">int</span> a[<span class="number">3</span>][<span class="number">4</span>];</span><br><span class="line"><span class="keyword">for</span>(i=<span class="number">0</span>;i&lt;<span class="number">3</span>;i++)</span><br><span class="line">	p[i]=a[i];</span><br></pre></td></tr></table></figure>
+
+<p>这里int *p[3] 表示一个一维数组内存放着三个指针变量，分别是p[0]、p[1]、p[2]，所以要分别赋值</p>
+<p><strong>指针数组和数组指针的内存布局</strong></p>
+<img src="/2020/09/21/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/22201218-19ddd896ae6a45e1b61c7e3ee59b4662.jpg" alt="img" style="zoom: 80%;">
+
+<hr>
+<p><strong>函数指针和指针函数</strong></p>
+<p><strong>指针函数</strong></p>
+<p>指针函数，简单的来说，就是一个<strong>返回指针</strong>的函数，其本质是一个函数，而该函数的返回值是一个指针。<br>声明格式为：<strong>类型标识符 *函数名(参数表)</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> *<span class="title">fun</span><span class="params">(<span class="keyword">int</span> x,<span class="keyword">int</span> y)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="keyword">int</span> sum;</span><br><span class="line"><span class="function"><span class="keyword">int</span> *<span class="title">add</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">        sum = a + b;</span><br><span class="line">        <span class="keyword">return</span> &amp;sum;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">        <span class="keyword">int</span> *p;</span><br><span class="line">        p=add(<span class="number">1</span>,<span class="number">2</span>);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"add result is %d\n"</span>, *p);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>函数指针</strong></p>
+<p>函数指针，其本质是一个<strong>指针变量</strong>，该<strong>指针指向这个函数</strong>。总结来说，函数指针就是指向函数的指针。<br>声明格式：类型说明符  (*函数名)  (参数)</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> (*fun)(<span class="keyword">int</span> x,<span class="keyword">int</span> y);</span><br></pre></td></tr></table></figure>
+
+<p>函数指针是需要把一个函数的地址赋值给它，有两种写法：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">fun = &amp;Function；</span><br><span class="line">fun = Function;</span><br></pre></td></tr></table></figure>
+
+<p>调用函数指针的方式也有两种：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">x = (*fun)();</span><br><span class="line">x = fun();</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span><span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">add</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (x+y);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">        <span class="keyword">int</span> (*p)(<span class="keyword">int</span>, <span class="keyword">int</span>);</span><br><span class="line">        p=add;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"add result is %d\n"</span>, p(<span class="number">200</span>,<span class="number">300</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>C</tag>
+        <tag>指针</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>一种string类的简单实现</title>
     <url>/2020/09/20/%E4%B8%80%E7%A7%8Dstring%E7%B1%BB%E7%9A%84%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0/</url>
     <content><![CDATA[<p>C++中String类的简单实现</p>

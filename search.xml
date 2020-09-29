@@ -1,6 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>读写锁的实现</title>
+    <url>/2020/09/29/%E8%AF%BB%E5%86%99%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/</url>
+    <content><![CDATA[<p>读写锁就是对于临界区区分读和写。在读多写少的场景下，不加区分的使用互斥量显然是浪费的，这时读写锁就派上用场了。</p>
+<p>读写锁的特性：</p>
+<ul>
+<li>当读写锁被加了写锁时，其他线程对该锁加读锁或者写锁都会阻塞</li>
+<li>当读写锁被加了读锁时，其他线程对该锁加写锁会阻塞，加读锁会成功</li>
+</ul>
+<p>因而适用于多读少写的场景</p>
+<p><strong><code>RWlock.h</code></strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;atomic&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;condition_variable&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RWLock</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    RWLock();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">virtual</span> ~RWLock() = <span class="keyword">default</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">read_lock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">read_unlock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">write_lock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">write_unlock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    condition_variable read_cv;</span><br><span class="line">    condition_variable write_cv;</span><br><span class="line">    atomic&lt;<span class="keyword">int</span>&gt; read_count; <span class="comment">//已经加上读锁的线程的数量</span></span><br><span class="line">    atomic&lt;<span class="keyword">int</span>&gt; write_count; <span class="comment">//等待加上写锁的线程的数量</span></span><br><span class="line">    atomic&lt;<span class="keyword">bool</span>&gt; is_writing; <span class="comment">//记录当前是否有线程加了写锁</span></span><br><span class="line">    mutex mutex_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong><code>RWlock.cpp</code></strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"RWLock.h"</span></span></span><br><span class="line"></span><br><span class="line">RWLock::RWLock() :</span><br><span class="line">        read_count(<span class="number">0</span>),</span><br><span class="line">        write_count(<span class="number">0</span>),</span><br><span class="line">        is_writing(<span class="literal">false</span>) &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::read_lock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    <span class="comment">//只有当前没有等待加写锁的线程时，才加读锁</span></span><br><span class="line">    read_cv.wait(guard, [=] &#123; <span class="keyword">return</span> write_count == <span class="number">0</span>; &#125;);</span><br><span class="line">    ++read_count;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::read_unlock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    --read_count;</span><br><span class="line">    <span class="keyword">if</span> (read_count == <span class="number">0</span> &amp;&amp; write_count &gt; <span class="number">0</span>)</span><br><span class="line">        write_cv.notify_one();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::write_lock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    <span class="comment">//记录等待加写锁的数量</span></span><br><span class="line">    ++write_count;</span><br><span class="line">    write_cv.wait(guard, [=] &#123; <span class="keyword">return</span> read_count == <span class="number">0</span> &amp;&amp; !is_writing; &#125;);</span><br><span class="line">    is_writing = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::write_unlock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    write_count--;</span><br><span class="line">    <span class="comment">//写优先，有等待加写锁的先加写锁，否则才加读锁</span></span><br><span class="line">    <span class="keyword">if</span> (write_count == <span class="number">0</span>) &#123;</span><br><span class="line">        read_cv.notify_all();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        write_cv.notify_one();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></content>
+      <tags>
+        <tag>C++</tag>
+        <tag>多线程</tag>
+        <tag>读写锁</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>指针、数组和函数</title>
     <url>/2020/09/21/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/</url>
     <content><![CDATA[<p><strong>数组指针和指针数组</strong></p>

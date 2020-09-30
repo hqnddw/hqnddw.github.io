@@ -253,7 +253,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/29/%E8%AF%BB%E5%86%99%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/30/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lwl">
@@ -272,7 +272,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2020/09/29/%E8%AF%BB%E5%86%99%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/" itemprop="url">读写锁的实现</a></h1>
+                <a class="post-title-link" href="/2020/09/30/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/" itemprop="url">前置++和后置++</a></h1>
         
 
         <div class="post-meta">
@@ -284,8 +284,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-09-29T21:08:42+08:00">
-                2020-09-29
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-09-30T18:52:30+08:00">
+                2020-09-30
               </time>
             
 
@@ -294,6 +294,28 @@
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -324,19 +346,14 @@
       
         
           
-          读写锁就是对于临界区区分读和写。在读多写少的场景下，不加区分的使用互斥量显然是浪费的，这时读写锁就派上用场了。
-读写锁的特性：
-
-当读写锁被加了写锁时，其他线程对该锁加读锁或者写锁都会阻塞
-当读写锁被加了读锁时，其他线程对该锁加写锁会阻塞，加读锁会成功
-
-因而适用于多读少写的场景
-RWlock.h
-
+          ++a表示取a的地址，增加它的内容，然后把值放在寄存器中；
+a++表示取a的地址，把它的值装入寄存器，然后增加内存中的a的值；
+前置++和后置++的重载
+123456789101112131415161718192021class Age &#123;public:    int age;    A
           ...
           <!--noindex-->
           <div class="post-button text-center">
-            <a class="btn" href="/2020/09/29/%E8%AF%BB%E5%86%99%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/" rel="contents">
+            <a class="btn" href="/2020/09/30/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/" rel="contents">
               阅读全文 &raquo;
             </a>
           </div>
@@ -1047,7 +1064,7 @@ RWlock.h
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">7</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

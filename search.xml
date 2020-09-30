@@ -1,56 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>读写锁的实现</title>
-    <url>/2020/09/29/%E8%AF%BB%E5%86%99%E9%94%81%E7%9A%84%E5%AE%9E%E7%8E%B0/</url>
-    <content><![CDATA[<p>读写锁就是对于临界区区分读和写。在读多写少的场景下，不加区分的使用互斥量显然是浪费的，这时读写锁就派上用场了。</p>
-<p>读写锁的特性：</p>
-<ul>
-<li>当读写锁被加了写锁时，其他线程对该锁加读锁或者写锁都会阻塞</li>
-<li>当读写锁被加了读锁时，其他线程对该锁加写锁会阻塞，加读锁会成功</li>
-</ul>
-<p>因而适用于多读少写的场景</p>
-<p><strong><code>RWlock.h</code></strong></p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;atomic&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;condition_variable&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">RWLock</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    RWLock();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">virtual</span> ~RWLock() = <span class="keyword">default</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">read_lock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">read_unlock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">write_lock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">write_unlock</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    condition_variable read_cv;</span><br><span class="line">    condition_variable write_cv;</span><br><span class="line">    atomic&lt;<span class="keyword">int</span>&gt; read_count; <span class="comment">//已经加上读锁的线程的数量</span></span><br><span class="line">    atomic&lt;<span class="keyword">int</span>&gt; write_count; <span class="comment">//等待加上写锁的线程的数量</span></span><br><span class="line">    atomic&lt;<span class="keyword">bool</span>&gt; is_writing; <span class="comment">//记录当前是否有线程加了写锁</span></span><br><span class="line">    mutex mutex_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+    <title>前置++和后置++</title>
+    <url>/2020/09/30/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/</url>
+    <content><![CDATA[<p>++a表示取a的地址，增加它的内容，然后把值放在寄存器中；</p>
+<p>a++表示取a的地址，把它的值装入寄存器，然后增加内存中的a的值；</p>
+<p><strong>前置++和后置++的重载</strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Age</span> &#123;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> age;</span><br><span class="line"></span><br><span class="line">    Age &amp;<span class="keyword">operator</span>++() &#123;</span><br><span class="line">        ++age;</span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> Age <span class="keyword">operator</span>++(<span class="keyword">int</span>) &#123;</span><br><span class="line">        Age tmp = *<span class="keyword">this</span>;</span><br><span class="line">        ++(*<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">return</span> tmp;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Age a;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; a.age &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<p>从上述代码，我们可以看出前置++和后置++，有4点不同：</p>
+<ol>
+<li>返回类型不同</li>
+<li>形参不同</li>
+<li>代码不同</li>
+<li>效率不同</li>
+</ol>
+<p><strong>1. 返回值类型的区别</strong></p>
+<p>前置++的返回类型是Age&amp;，后置++的返回类型const Age。这意味着，前置++返回的是左值，后置++返回的是右值</p>
+<p>左值和右值，决定了前置++和后置++的用法</p>
+<figure class="highlight brainfuck"><table><tr><td class="code"><pre><span class="line"><span class="comment">int</span> <span class="comment">main()</span> <span class="comment">&#123;</span></span><br><span class="line"><span class="comment"></span>    <span class="comment">Age</span> <span class="comment">a;</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"></span>    <span class="comment">(a</span>++<span class="comment">)</span>++<span class="comment">;</span>  <span class="comment">//编译错误</span></span><br><span class="line"><span class="comment"></span>    ++<span class="comment">(a</span>++<span class="comment">);</span>  <span class="comment">//编译错误</span></span><br><span class="line"><span class="comment"></span>    <span class="comment">a</span>++ <span class="comment">=</span> <span class="comment">1;</span>   <span class="comment">//编译错误</span></span><br><span class="line"><span class="comment"></span>    <span class="comment">(</span>++<span class="comment">a)</span>++<span class="comment">;</span>  <span class="comment">//OK</span></span><br><span class="line"><span class="comment"></span>    ++<span class="comment">(</span>++<span class="comment">a);</span>  <span class="comment">//OK</span></span><br><span class="line"><span class="comment"></span>    ++<span class="comment">a</span> <span class="comment">=</span> <span class="comment">1;</span>   <span class="comment">//OK</span></span><br><span class="line"><span class="comment">&#125;</span></span><br></pre></td></tr></table></figure>
 
-
-<p><strong><code>RWlock.cpp</code></strong></p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"RWLock.h"</span></span></span><br><span class="line"></span><br><span class="line">RWLock::RWLock() :</span><br><span class="line">        read_count(<span class="number">0</span>),</span><br><span class="line">        write_count(<span class="number">0</span>),</span><br><span class="line">        is_writing(<span class="literal">false</span>) &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::read_lock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    <span class="comment">//只有当前没有等待加写锁的线程时，才加读锁</span></span><br><span class="line">    read_cv.wait(guard, [=] &#123; <span class="keyword">return</span> write_count == <span class="number">0</span>; &#125;);</span><br><span class="line">    ++read_count;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::read_unlock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    --read_count;</span><br><span class="line">    <span class="keyword">if</span> (read_count == <span class="number">0</span> &amp;&amp; write_count &gt; <span class="number">0</span>)</span><br><span class="line">        write_cv.notify_one();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::write_lock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    <span class="comment">//记录等待加写锁的数量</span></span><br><span class="line">    ++write_count;</span><br><span class="line">    write_cv.wait(guard, [=] &#123; <span class="keyword">return</span> read_count == <span class="number">0</span> &amp;&amp; !is_writing; &#125;);</span><br><span class="line">    is_writing = <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> RWLock::write_unlock() &#123;</span><br><span class="line">    unique_lock&lt;mutex&gt; guard(mutex_);</span><br><span class="line">    write_count--;</span><br><span class="line">    <span class="comment">//写优先，有等待加写锁的先加写锁，否则才加读锁</span></span><br><span class="line">    <span class="keyword">if</span> (write_count == <span class="number">0</span>) &#123;</span><br><span class="line">        read_cv.notify_all();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        write_cv.notify_one();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<p>++的类型是const Age，自然不能对它进行前置++、后置++、赋值等操作。</p>
+<p>++a的类型是Age&amp;，当然可以对它进行前置++、后置++、赋值等操作</p>
+<p><strong>a++的返回类型为什么要是const对象呢？</strong></p>
+<p>对于内置类型，(i++)++这样的表达式是不能通过编译的。自定义类型的操作符重载，应该与内置类型保持行为一致</p>
+<p><strong>2. 形参不同</strong></p>
+<p>前置++没有形参，而后置++有一个int形参</p>
+<p><strong>3.代码实现的区别</strong></p>
+<p>前置++的实现比较简单，自增之后，将<em>this返回即可。需要注意的是，一定要返回</em>this。</p>
+<p>后置++的实现稍微麻烦一些。因为要返回自增之前的对象，所以先将对象拷贝一份，再进行自增，最后返回那个拷贝</p>
+<p><strong>4.效率的区别</strong></p>
+<p>前置++的效率更高，理由是：后置++会生成临时对象</p>
 ]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
       <tags>
         <tag>C++</tag>
-        <tag>多线程</tag>
-        <tag>读写锁</tag>
       </tags>
   </entry>
   <entry>

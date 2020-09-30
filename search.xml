@@ -1,6 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>demo6</title>
+    <url>/2020/09/30/demo6/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>demo5</title>
+    <url>/2020/09/30/demo5/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>demo4</title>
+    <url>/2020/09/30/demo4/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>demo3</title>
+    <url>/2020/09/30/demo3/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>demo2</title>
+    <url>/2020/09/30/demo2/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
+    <title>demo1</title>
+    <url>/2020/09/30/demo1/</url>
+    <content><![CDATA[]]></content>
+  </entry>
+  <entry>
     <title>MySQL数据库缓冲池</title>
     <url>/2020/03/20/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0/</url>
     <content><![CDATA[<p>应用系统分层架构，为了加速数据访问，会把最常访问的数据，放在<strong>缓存</strong>(cache)里，避免每次都去访问数据库。操作系统会有<strong>缓冲池</strong>(buffer pool)机制，避免每次都访问磁盘，以加速数据的访问。MySQL作为一个存储系统，同样具有<strong>缓冲池</strong>(buffer pool)机制，以避免每次查询数据都进行磁盘IO</p>

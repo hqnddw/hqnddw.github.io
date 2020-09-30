@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="C++," />
+  <meta name="keywords" content="MySQL,数据库," />
 
 
 
@@ -81,16 +81,20 @@
 
 
 
-<meta name="description" content="++a表示取a的地址，增加它的内容，然后把值放在寄存器中； a++表示取a的地址，把它的值装入寄存器，然后增加内存中的a的值； 前置++和后置++的重载 123456789101112131415161718192021class Age &amp;#123;public:    int age;    Age &amp;amp;operator++() &amp;#123;        ++age;        r">
-<meta name="keywords" content="C++">
+<meta name="description" content="应用系统分层架构，为了加速数据访问，会把最常访问的数据，放在缓存(cache)里，避免每次都去访问数据库。操作系统会有缓冲池(buffer pool)机制，避免每次都访问磁盘，以加速数据的访问。MySQL作为一个存储系统，同样具有缓冲池(buffer pool)机制，以避免每次查询数据都进行磁盘IO InnoDB的缓冲池缓存什么？有什么用？ 缓存表数据与索引数据，把磁盘上的数据加载到缓冲池，避免每">
+<meta name="keywords" content="MySQL,数据库">
 <meta property="og:type" content="article">
-<meta property="og:title" content="前置++和后置++">
-<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;03&#x2F;07&#x2F;%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++&#x2F;index.html">
+<meta property="og:title" content="MySQL数据库缓冲池">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;03&#x2F;20&#x2F;MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0&#x2F;index.html">
 <meta property="og:site_name" content="lwl的博客">
-<meta property="og:description" content="++a表示取a的地址，增加它的内容，然后把值放在寄存器中； a++表示取a的地址，把它的值装入寄存器，然后增加内存中的a的值； 前置++和后置++的重载 123456789101112131415161718192021class Age &amp;#123;public:    int age;    Age &amp;amp;operator++() &amp;#123;        ++age;        r">
+<meta property="og:description" content="应用系统分层架构，为了加速数据访问，会把最常访问的数据，放在缓存(cache)里，避免每次都去访问数据库。操作系统会有缓冲池(buffer pool)机制，避免每次都访问磁盘，以加速数据的访问。MySQL作为一个存储系统，同样具有缓冲池(buffer pool)机制，以避免每次查询数据都进行磁盘IO InnoDB的缓冲池缓存什么？有什么用？ 缓存表数据与索引数据，把磁盘上的数据加载到缓冲池，避免每">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-09-30T12:12:36.336Z">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;03&#x2F;20&#x2F;MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0&#x2F;Image.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;03&#x2F;20&#x2F;MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0&#x2F;Image-1594741614324.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;03&#x2F;20&#x2F;MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0&#x2F;Image-1594747637932.png">
+<meta property="og:updated_time" content="2020-09-30T12:20:26.397Z">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;03&#x2F;20&#x2F;MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0&#x2F;Image.png">
 
 
 
@@ -120,13 +124,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2020/03/07/前置++和后置++/"/>
+  <link rel="canonical" href="http://yoursite.com/2020/03/20/MySQL数据库缓冲池/"/>
 
 
 
 
 
-  <title>前置++和后置++ | lwl的博客</title>
+  <title>MySQL数据库缓冲池 | lwl的博客</title>
   
 
 
@@ -253,7 +257,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/07/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/20/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lwl">
@@ -270,7 +274,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">前置++和后置++</h1>
+          <h1 class="post-title" itemprop="name headline">MySQL数据库缓冲池</h1>
         
 
         <div class="post-meta">
@@ -282,8 +286,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-03-07T18:52:30+08:00">
-                2020-03-07
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-03-20T20:06:52+08:00">
+                2020-03-20
               </time>
             
 
@@ -292,28 +296,6 @@
             
           </span>
 
-          
-            <span class="post-category" >
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">分类于</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index">
-                    <span itemprop="name">C++</span>
-                  </a>
-                </span>
-
-                
-                
-              
-            </span>
           
 
           
@@ -342,34 +324,72 @@
       
 
       
-        <p>++a表示取a的地址，增加它的内容，然后把值放在寄存器中；</p>
-<p>a++表示取a的地址，把它的值装入寄存器，然后增加内存中的a的值；</p>
-<p><strong>前置++和后置++的重载</strong></p>
-<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Age</span> &#123;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> age;</span><br><span class="line"></span><br><span class="line">    Age &amp;<span class="keyword">operator</span>++() &#123;</span><br><span class="line">        ++age;</span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> Age <span class="keyword">operator</span>++(<span class="keyword">int</span>) &#123;</span><br><span class="line">        Age tmp = *<span class="keyword">this</span>;</span><br><span class="line">        ++(*<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">return</span> tmp;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Age a;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; a.age &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>从上述代码，我们可以看出前置++和后置++，有4点不同：</p>
+        <p>应用系统分层架构，为了加速数据访问，会把最常访问的数据，放在<strong>缓存</strong>(cache)里，避免每次都去访问数据库。操作系统会有<strong>缓冲池</strong>(buffer pool)机制，避免每次都访问磁盘，以加速数据的访问。MySQL作为一个存储系统，同样具有<strong>缓冲池</strong>(buffer pool)机制，以避免每次查询数据都进行磁盘IO</p>
+<p><strong>InnoDB的缓冲池缓存什么？有什么用？</strong></p>
+<p>缓存表数据与索引数据，把磁盘上的数据加载到缓冲池，避免每次访问都进行磁盘IO，起到加速访问的作用。</p>
+<p><strong>如何管理与淘汰缓冲池，使得性能最大化呢？</strong></p>
+<p>在介绍具体细节之前，先介绍下“预读”的概念。</p>
+<p><strong>什么是预读？</strong>磁盘读写，并不是按需读取，而是按页读取，一次至少读一页数据（一般是4K），如果未来要读取的数据就在页中，就能够省去后续的磁盘IO，提高效率。 </p>
+<p><strong>预读为什么有效？</strong>数据访问，通常都遵循“集中读写”的原则，使用一些数据，大概率会使用附近的数据，这就是所谓的“局部性原理”，它表明提前加载是有效的，确实能够减少磁盘IO。 </p>
+<p><strong>按页(4K)读取，和InnoDB的缓冲池设计有啥关系？</strong>（1）磁盘访问按页读取能够提高性能，所以缓冲池一般也是按页缓存数据；（2）预读机制启示了我们，能把一些“可能要访问”的页提前加入缓冲池，避免未来的磁盘IO操作；</p>
+<p><strong>InnoDB是以什么算法，来管理这些缓冲页呢？</strong>最容易想到的，就是LRU(Least recently used)。</p>
+<p><strong>传统的LRU是如何进行缓冲页管理？</strong>最常见的玩法是，把入缓冲池的页放到LRU的头部，作为最近访问的元素，从而最晚被淘汰。这里又分两种情况：（1）<strong>页已经在缓冲池里</strong>，那就只做“移至”LRU头部的动作，而没有页被淘汰；（2）<strong>页不在缓冲池里</strong>，除了做“放入”LRU头部的动作，还要做“淘汰”LRU尾部页的动作；</p>
+<p>虽然传统的LRU缓冲池算法十分直观，但这里有两个问题：（1）<strong>预读失效</strong>；（2）<strong>缓冲池污染</strong></p>
+<p><strong>什么是预读失效？</strong>由于预读(Read-Ahead)，提前把页放入了缓冲池，但最终MySQL并没有从页中读取数据，称为预读失效。</p>
+<p><strong>如何对预读失效进行优化？</strong>要优化预读失效，思路是：（1）让预读失败的页，停留在缓冲池LRU里的时间尽可能短；（2）让真正被读取的页，才挪到缓冲池LRU的头部；以保证，真正被读取的热数据留在缓冲池里的时间尽可能长。</p>
+<p><strong>具体方法是</strong>：</p>
 <ol>
-<li>返回类型不同</li>
-<li>形参不同</li>
-<li>代码不同</li>
-<li>效率不同</li>
+<li>将LRU分为两个部分：新生代(new sublist)老生代(old sublist)</li>
+<li>新老生代收尾相连，即：新生代的尾(tail)连接着老生代的头(head)</li>
+<li>新页（例如被预读的页）加入缓冲池时，只加入到老生代头部：如果数据真正被读取（预读成功），才会加入到新生代的头部如果数据没有被读取，则会比新生代里的“热数据页”更早被淘汰出缓冲池</li>
 </ol>
-<p><strong>1. 返回值类型的区别</strong></p>
-<p>前置++的返回类型是Age&amp;，后置++的返回类型const Age。这意味着，前置++返回的是左值，后置++返回的是右值</p>
-<p>左值和右值，决定了前置++和后置++的用法</p>
-<figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">int</span> <span class="comment">main()</span> <span class="comment">&#123;</span></span><br><span class="line"><span class="comment"></span>    <span class="comment">Age</span> <span class="comment">a;</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"></span>    <span class="comment">(a</span>++<span class="comment">)</span>++<span class="comment">;</span>  <span class="comment">//编译错误</span></span><br><span class="line"><span class="comment"></span>    ++<span class="comment">(a</span>++<span class="comment">);</span>  <span class="comment">//编译错误</span></span><br><span class="line"><span class="comment"></span>    <span class="comment">a</span>++ <span class="comment">=</span> <span class="comment">1;</span>   <span class="comment">//编译错误</span></span><br><span class="line"><span class="comment"></span>    <span class="comment">(</span>++<span class="comment">a)</span>++<span class="comment">;</span>  <span class="comment">//OK</span></span><br><span class="line"><span class="comment"></span>    ++<span class="comment">(</span>++<span class="comment">a);</span>  <span class="comment">//OK</span></span><br><span class="line"><span class="comment"></span>    ++<span class="comment">a</span> <span class="comment">=</span> <span class="comment">1;</span>   <span class="comment">//OK</span></span><br><span class="line"><span class="comment">&#125;</span></span><br></pre></td></tr></table></figure>
+<p><strong>举个例子，整个缓冲池LRU如图：</strong></p>
+<p>（1）整个LRU长度是10（2）前70%是新生代（3）后30%是老生代（4）新老生代首尾相连</p>
+<img src="/2020/03/20/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0/Image.png" alt="Image" style="zoom: 95%;">
 
-<p>++的类型是const Age，自然不能对它进行前置++、后置++、赋值等操作。</p>
-<p>++a的类型是Age&amp;，当然可以对它进行前置++、后置++、赋值等操作</p>
-<p><strong>a++的返回类型为什么要是const对象呢？</strong></p>
-<p>对于内置类型，(i++)++这样的表达式是不能通过编译的。自定义类型的操作符重载，应该与内置类型保持行为一致</p>
-<p><strong>2. 形参不同</strong></p>
-<p>前置++没有形参，而后置++有一个int形参</p>
-<p><strong>3.代码实现的区别</strong></p>
-<p>前置++的实现比较简单，自增之后，将<em>this返回即可。需要注意的是，一定要返回</em>this。</p>
-<p>后置++的实现稍微麻烦一些。因为要返回自增之前的对象，所以先将对象拷贝一份，再进行自增，最后返回那个拷贝</p>
-<p><strong>4.效率的区别</strong></p>
-<p>前置++的效率更高，理由是：后置++会生成临时对象</p>
+<p>假如有一个页号为50的新页被预读加入缓冲池：</p>
+<ol>
+<li>50只会从老生代头部插入，老生代尾部（也是整体尾部）的页会被淘汰掉；</li>
+<li>假设50这一页不会被真正读取，即预读失败，它将比新生代的数据更早淘汰出缓冲池；</li>
+</ol>
+<img src="/2020/03/20/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0/Image-1594741614324.png" alt="Image" style="zoom:95%;">
+
+<p>假如50这一页立刻被读取到，例如SQL访问了页内的行row数据：</p>
+<ol>
+<li>它会被立刻加入到新生代的头部；</li>
+<li>新生代的页会被挤到老生代，此时并不会有页面被真正淘汰；</li>
+</ol>
+<img src="/2020/03/20/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0/Image-1594747637932.png" alt="Image" style="zoom:95%;">
+
+<p><strong>老生代改进版LRU仍然解决不了缓冲池污染的问题。</strong></p>
+<p><strong>什么是MySQL缓冲池污染？</strong></p>
+<p>当某一个SQL语句，要批量扫描大量数据时，可能导致把缓冲池的所有页都替换出去，导致大量热数据被换出，MySQL性能急剧下降，这种情况叫缓冲池污染。 </p>
+<p>例如，有一个数据量较大的用户表，当执行：select * from user where name like “%foo%”，虽然结果集可能只有少量数据，但这类like不能命中索引，必须全表扫描，就需要访问大量的页：</p>
+<ol>
+<li>把页加到缓冲池（插入老生代头部）；</li>
+<li>从页里读出相关的row（插入新生代头部）；</li>
+<li>row里的name字段和字符串foo进行比较，如果符合条件，加入到结果集中；</li>
+<li>直到扫描完所有页中的所有row</li>
+</ol>
+<p>如此一来，所有的数据页都会被加载到新生代的头部，但只会访问一次，真正的热数据被大量换出。</p>
+<p><strong>怎么处理这类扫码大量数据导致的缓冲池污染问题呢？</strong></p>
+<p>MySQL缓冲池加入了一个“<strong>老生代停留时间窗口</strong>”的机制：</p>
+<ol>
+<li>假设T=老生代停留时间窗口；</li>
+<li>插入老生代头部的页，即使立刻被访问，并不会立刻放入新生代头部</li>
+<li>只有满足“<strong>被访问”</strong>并且“<strong>在老生代停留时间”大于T</strong>，才会被放入新生代头部；</li>
+</ol>
+<p><strong>总结</strong></p>
+<ul>
+<li>缓冲池(buffer pool)是一种<strong>常见的降低磁盘访问的机制；</strong></li>
+<li>缓冲池通常<strong>以页(page)为单位缓存数据</strong>；</li>
+<li>缓冲池的<strong>常见管理算法是LRU</strong>，memcache，OS，InnoDB都使用了这种算法；</li>
+<li>InnoDB对普通LRU进行了优化：<ul>
+<li>将缓冲池分为<strong>老生代和新生代</strong>，入缓冲池的页，优先进入老生代，页被访问，才进入新生代，<strong>以解决预读失效的问题</strong></li>
+<li><strong>页被访问</strong>，且在老生代<strong>停留时间超过配置阈值</strong>的，才进入新生代，<strong>以解决批量数据访问，大量热数据淘汰的问题</strong></li>
+</ul>
+</li>
+</ul>
 
       
     </div>
@@ -387,7 +407,9 @@
       
         <div class="post-tags">
           
-            <a href="/tags/C/" rel="tag"># C++</a>
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
           
         </div>
       
@@ -400,8 +422,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2020/02/11/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/" rel="next" title="指针、数组和函数">
-                <i class="fa fa-chevron-left"></i> 指针、数组和函数
+              <a href="/2020/03/07/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/" rel="next" title="前置++和后置++">
+                <i class="fa fa-chevron-left"></i> 前置++和后置++
               </a>
             
           </div>
@@ -409,10 +431,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2020/03/20/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0/" rel="prev" title="MySQL数据库缓冲池">
-                MySQL数据库缓冲池 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>

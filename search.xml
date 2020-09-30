@@ -2,7 +2,7 @@
 <search>
   <entry>
     <title>前置++和后置++</title>
-    <url>/2020/09/30/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/</url>
+    <url>/2020/03/07/%E5%89%8D%E7%BD%AE++%E5%92%8C%E5%90%8E%E7%BD%AE++/</url>
     <content><![CDATA[<p>++a表示取a的地址，增加它的内容，然后把值放在寄存器中；</p>
 <p>a++表示取a的地址，把它的值装入寄存器，然后增加内存中的a的值；</p>
 <p><strong>前置++和后置++的重载</strong></p>
@@ -41,7 +41,7 @@
   </entry>
   <entry>
     <title>指针、数组和函数</title>
-    <url>/2020/09/21/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/</url>
+    <url>/2020/02/11/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/</url>
     <content><![CDATA[<p><strong>数组指针和指针数组</strong></p>
 <p><strong>数组指针</strong></p>
 <p>定义 int (*p)[n];</p>
@@ -57,7 +57,7 @@
 
 <p>这里int *p[3] 表示一个一维数组内存放着三个指针变量，分别是p[0]、p[1]、p[2]，所以要分别赋值</p>
 <p><strong>指针数组和数组指针的内存布局</strong></p>
-<img src="/2020/09/21/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/22201218-19ddd896ae6a45e1b61c7e3ee59b4662.jpg" alt="img" style="zoom: 80%;">
+<img src="/2020/02/11/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/22201218-19ddd896ae6a45e1b61c7e3ee59b4662.jpg" alt="img" style="zoom: 80%;">
 
 <hr>
 <p><strong>函数指针和指针函数</strong></p>

@@ -137,7 +137,8 @@
     <title>Redis数据结构之SDS</title>
     <url>/2020/09/30/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B9%8BSDS/</url>
     <content><![CDATA[<p> 字符串在Redis中使用非常广泛，在Redis中，所有的数据都保存在字典（Map）中，而字典的键就是字符串类型，并且对于很大一部分字典值数据也是又字符串组成的。以下是SDS的具体存储结构：</p>
-<p><img src="/2020/09/30/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B9%8BSDS/202205_cXnQ_2831721.png" alt="img"></p>
+<img src="/2020/09/30/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B9%8BSDS/202205_cXnQ_2831721.png" alt="img" style="zoom:80%;">
+
 <p>从图中可以看出，SDS的属性有三个：len、free和buf数组：</p>
 <ul>
 <li>len字段是用来保存SDS字符串中所包含字符数目的</li>
@@ -145,7 +146,8 @@
 <li>buf数组则是实际用来保存字符串的</li>
 </ul>
 <p>比如如下结构保存了“Hello World！”这个字符串：</p>
-<p><img src="/2020/09/30/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B9%8BSDS/204859_FBGP_2831721.png" alt="img"></p>
+<img src="/2020/09/30/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B9%8BSDS/204859_FBGP_2831721.png" alt="img" style="zoom:80%;">
+
 <p>这里需要注意的是，SDS和C字符串一样，需要在字符串结尾加上一个’\0’表示该字符串的结束（可以直接使用C字符串库里面的函数）</p>
 <p><strong>Redis使用SDS结构而不用c字符串保存字符串的原因有如下几点</strong>：</p>
 <ol>

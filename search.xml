@@ -1,6 +1,293 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Redis对象</title>
+    <url>/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/</url>
+    <content><![CDATA[<h3 id="对象"><a href="#对象" class="headerlink" title="对象"></a>对象</h3><p>Redis并没有直接SDS、双端链表、字典、压缩列表、整数集合等数据结构来实现键值对数据库，而是基于这些数据结构创建了一个对象系统，这个系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种类型的对象，每种对象都用到了至少一种我们之前介绍的数据结构</p>
+<p>通过这五种不同类型的对象，Redis可以在执行命令之前，根据对象的类型来判断一个对象是否可以执行给定的命令。<strong>使用对象的另一个好处是，我们可以根据不同的使用场景，为对象设置多种不同的数据结构实现</strong>，从而优化对象在不同场景下的使用效率</p>
+<p>Redis共有五种对象的类型，分别是：</p>
+<table>
+<thead>
+<tr>
+<th align="center">对象</th>
+<th align="center">对象type属性的值</th>
+<th align="center">TYPE命令的输出</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">字符串对象</td>
+<td align="center">REDIS_STRING</td>
+<td align="center">string</td>
+</tr>
+<tr>
+<td align="center">列表对象</td>
+<td align="center">REDIS_LIST</td>
+<td align="center">list</td>
+</tr>
+<tr>
+<td align="center">哈希对象</td>
+<td align="center">REDIS_HASH</td>
+<td align="center">hash</td>
+</tr>
+<tr>
+<td align="center">集合对象</td>
+<td align="center">REDIS_SET</td>
+<td align="center">set</td>
+</tr>
+<tr>
+<td align="center">有序集合对象</td>
+<td align="center">REDIS_ZSET</td>
+<td align="center">zset</td>
+</tr>
+</tbody></table>
+<p>Redis中的一个对象的结构体表示如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Redis 对象</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 类型</span></span><br><span class="line">    <span class="keyword">unsigned</span> type:<span class="number">4</span>;        </span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 不使用(对齐位)</span></span><br><span class="line">    <span class="keyword">unsigned</span> notused:<span class="number">2</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 编码方式</span></span><br><span class="line">    <span class="keyword">unsigned</span> encoding:<span class="number">4</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// LRU 时间（相对于 server.lruclock）</span></span><br><span class="line">    <span class="keyword">unsigned</span> lru:<span class="number">22</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 引用计数</span></span><br><span class="line">    <span class="keyword">int</span> refcount;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 指向对象的值</span></span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line"> </span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+
+<p><strong>访问时间lru</strong></p>
+<p>lru表示该对象最后一次被访问的时间，其占用22个bit位。保存该值的目的是为了计算该对象的空转时长，便于后续根据空转时长来决定是否释放该键，回收内存。</p>
+<p><strong>引用计数refcount</strong></p>
+<p>C语言不具备自动内存回收机制，所以Redis对每一个对象设定了引用计数refcount字段，程序通过该字段的信息，在适当的时候自动释放内存进行内存回收。此功能与C++的智能指针相似。</p>
+<ul>
+<li>当创建一个对象时，其引用计数初始化为1；</li>
+<li>当这个对象被一个新程序使用时，其引用计数加1；</li>
+<li>当这个对象不再被一个程序使用时，其引用计数减1；</li>
+<li>当引用计数为0时，释放该对象，回收内存。</li>
+</ul>
+<p><strong>编码和底层实现</strong></p>
+<p>对象的ptr指针指向对象的底层实现数据结构，而这些数据结构由对象的encoding属性决定。encoding属性记录了对象使用的编码，也即是说这个对象使用了什么数据结构作为对象的底层实现，这个属性的值可以是下表列出的常量的其中一个</p>
+<table>
+<thead>
+<tr>
+<th align="center">编码常量</th>
+<th align="center">编码所对应的底层数据结构</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">REDIS_ENCODING_INT</td>
+<td align="center">long类型的整数</td>
+</tr>
+<tr>
+<td align="center">REDIS_ENCODING_EMBSTR</td>
+<td align="center">embstr编码的简单动态字符串</td>
+</tr>
+<tr>
+<td align="center">REDIS_ENCODING_RAW</td>
+<td align="center">简单动态字符串</td>
+</tr>
+<tr>
+<td align="center">REDIS_ENCODING_HT</td>
+<td align="center">字典</td>
+</tr>
+<tr>
+<td align="center">REDIS_ENCODING_LINKEDLIST</td>
+<td align="center">双端链表</td>
+</tr>
+<tr>
+<td align="center">REDIS_ENCODING_ZIPLIST</td>
+<td align="center">压缩列表</td>
+</tr>
+<tr>
+<td align="center">REDIS_ENCODING_INTSET</td>
+<td align="center">整数集合</td>
+</tr>
+<tr>
+<td align="center">REDIS_ENCODING_SKIPLIST</td>
+<td align="center">跳跃表和字典</td>
+</tr>
+</tbody></table>
+<p>每种类型的对象都至少使用了两种不同的编码，下表列出了每种类型的对象可以使用的编码</p>
+<table>
+<thead>
+<tr>
+<th align="center">类型</th>
+<th align="center">编码</th>
+<th align="center">对象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">REDIS_STRING</td>
+<td align="center">REDIS_ENCODING_INT</td>
+<td align="center">使用整数值实现的字符串对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_STRING</td>
+<td align="center">REDIS_ENCODING_EMBSTR</td>
+<td align="center">使用embstr编码的简单动态字符串实现的字符串对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_STRING</td>
+<td align="center">REDIS_ENCODING_RAW</td>
+<td align="center">使用简单动态字符串实现的字符串对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_LIST</td>
+<td align="center">REDIS_ENCODING_ZIPLIST</td>
+<td align="center">使用压缩列表实现的列表对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_LIST</td>
+<td align="center">REDIS_ENCODING_LINKEDLIST</td>
+<td align="center">使用双端链表实现的列表对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_HASH</td>
+<td align="center">REDIS_ENCODING_ZIPLIST</td>
+<td align="center">使用压缩列表实现的哈希对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_HASH</td>
+<td align="center">REDIS_ENCODING_HT</td>
+<td align="center">使用字典实现的哈希对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_SET</td>
+<td align="center">REDIS_ENCODING_INTSET</td>
+<td align="center">使用整数集合实现的集合对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_SET</td>
+<td align="center">REDIS_ENCODING_HT</td>
+<td align="center">使用字典实现的集合对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_ZSET</td>
+<td align="center">REDIS_ENCODING_ZIPLIST</td>
+<td align="center">使用压缩列表实现的有序集合对象</td>
+</tr>
+<tr>
+<td align="center">REDIS_ZSET</td>
+<td align="center">REDIS_ENCODING_SKIPLIST</td>
+<td align="center">使用跳跃表和字典实现的有序集合对象</td>
+</tr>
+</tbody></table>
+<p>使用OBJECT ENCODING命令可以查看一个数据库键的值对象的编码：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">127.0.0.1:6379&gt; SET msg "hello wrold"</span><br><span class="line">OK</span><br><span class="line">127.0.0.1:6379&gt; OBJECT ENCODING msg</span><br><span class="line">"embstr"</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="字符串对象"><a href="#字符串对象" class="headerlink" title="字符串对象"></a>字符串对象</h3><p>字符串对象的编码可以是int、raw或者embstr。</p>
+<p>如果一个字符串的内容可以转换为long，那么该字符串就会被转换成为long类型，对象的ptr就会指向该long，并且对象类型也用int类型表示</p>
+<p>普通的字符串有两种，embstr和raw。embstr应该是Redis 3.0新增的数据结构,在2.8中是没有的。如果字符串对象的长度小于39字节，就用embstr对象。否则用传统的raw对象。可以从下面这段代码看出</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> REDIS_ENCODING_EMBSTR_SIZE_LIMIT 39</span></span><br><span class="line"><span class="function">robj *<span class="title">createStringObject</span><span class="params">(<span class="keyword">char</span> *ptr, <span class="keyword">size_t</span> len)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (len &lt;= REDIS_ENCODING_EMBSTR_SIZE_LIMIT)</span><br><span class="line">        <span class="keyword">return</span> createEmbeddedStringObject(ptr,len);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> createRawStringObject(ptr,len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>embstr的好处</strong>有如下几点：</p>
+<ul>
+<li>embstr的创建只需分配一次内存，而raw为两次（一次为sds分配对象，另一次为objet分配对象，embstr省去了第一次）</li>
+<li>相对地，释放内存的次数也由两次变为一次</li>
+<li>embstr的objet和sds放在一起，更好地利用缓存带来的优势</li>
+</ul>
+<p>raw和embstr的区别可以用下面两幅图所示：</p>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005184457915.png" alt="image-20201005184457915" style="zoom: 67%;">
+
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005184512867.png" alt="image-20201005184512867" style="zoom:67%;">
+
+<p>字符串对象保存各类型值的编码方式</p>
+<table>
+<thead>
+<tr>
+<th align="center">值</th>
+<th align="center">编码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">可以用long类型保存的整数</td>
+<td align="center">int</td>
+</tr>
+<tr>
+<td align="center">可以用long double类型保存的浮点数</td>
+<td align="center">embstr或者raw</td>
+</tr>
+<tr>
+<td align="center">字符串值，或者因为长度太大而没办法用long类型表示的整数，又或者因为长度太大而没办法用long double类型表示的浮点数</td>
+<td align="center">embstr或者raw</td>
+</tr>
+</tbody></table>
+<p><strong>编码转换</strong></p>
+<ul>
+<li>对于int编码的字符串对象来说，如果我们向对象执行了一些命令，使得对象保存的不再是整数值，而是一个字符串值，那么字符串对象将从int变为raw</li>
+<li>redis并未提供任何修改embstr的方式，即embstr是只读的形式。对embstr的修改实际上是先转换为raw再进行修改</li>
+</ul>
+<hr>
+<h3 id="列表对象"><a href="#列表对象" class="headerlink" title="列表对象"></a>列表对象</h3><p>列表对象的编码可以是ziplist或者linkedlist。</p>
+<p><code>ziplist</code>是一种压缩链表，它的好处是更能节省内存空间，因为它所存储的内容都是在连续的内存区域当中的。当列表对象元素不大，每个元素也不大的时候，就采用ziplist存储</p>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005185321906.png" alt="image-20201005185321906" style="zoom:67%;">
+
+<p><code>linkedlist</code> 编码的列表对象使用双端链表作为底层实现， 每个双端链表节点（node）都保存了一个字符串对象， 而每个字符串对象都保存了一个列表元素    </p>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005185429927.png" alt="image-20201005185429927" style="zoom:67%;">
+
+<p><strong>编码转换：</strong></p>
+<p>当列表对象可以同时满足以下两个条件时， 列表对象使用 <code>ziplist</code> 编码：</p>
+<ol>
+<li>列表对象保存的所有字符串元素的长度都小于 <code>64</code> 字节；</li>
+<li>列表对象保存的元素数量小于 <code>512</code> 个；</li>
+</ol>
+<p>不能满足这两个条件的列表对象需要使用 <code>linkedlist</code> 编码</p>
+<hr>
+<h3 id="哈希对象"><a href="#哈希对象" class="headerlink" title="哈希对象"></a>哈希对象</h3><p>哈希对象的编码可以是 <code>ziplist</code> 或者 <code>hashtable</code> 。</p>
+<p><code>ziplist</code> 编码的哈希对象使用压缩列表作为底层实现， 每当有新的键值对要加入到哈希对象时， 程序会先将保存了键的压缩列表节点推入到压缩列表表尾， 然后再将保存了值的压缩列表节点推入到压缩列表表尾， 因此：</p>
+<ul>
+<li>保存了同一键值对的两个节点总是紧挨在一起， 保存键的节点在前， 保存值的节点在后；</li>
+<li>先添加到哈希对象中的键值对会被放在压缩列表的表头方向， 而后来添加到哈希对象中的键值对会被放在压缩列表的表尾方向</li>
+</ul>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005185847324.png" alt="image-20201005185847324" style="zoom:67%;">
+
+<p><code>hashtable</code> 编码的哈希对象使用字典作为底层实现， 哈希对象中的每个键值对都使用一个字典键值对来保存：</p>
+<ul>
+<li>字典的每个键都是一个字符串对象， 对象中保存了键值对的键</li>
+<li>字典的每个值都是一个字符串对象， 对象中保存了键值对的值</li>
+</ul>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005185935575.png" alt="image-20201005185935575" style="zoom:67%;">
+
+<p><strong>编码转换</strong></p>
+<p>当哈希对象可以同时满足以下两个条件时， 哈希对象使用 <code>ziplist</code> 编码：</p>
+<ol>
+<li>哈希对象保存的所有键值对的键和值的字符串长度都小于 <code>64</code> 字节；</li>
+<li>哈希对象保存的键值对数量小于 <code>512</code> 个；</li>
+</ol>
+<p>不能满足这两个条件的哈希对象需要使用 <code>hashtable</code> 编码</p>
+<hr>
+<h3 id="集合对象"><a href="#集合对象" class="headerlink" title="集合对象"></a>集合对象</h3><p>集合对象的编码可以是 intset 或者 hashtable 。</p>
+<p>intset 编码的集合对象使用整数集合作为底层实现， 集合对象包含的所有元素都被保存在整数集合里面。</p>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005190917671.png" alt="image-20201005190917671" style="zoom:67%;">
+
+<p>hashtable 编码的集合对象使用字典作为底层实现， 字典的每个键都是一个字符串对象， 每个字符串对象包含了一个集合元素， 而字典的值则全部被设置为 NULL</p>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005191004670.png" alt="image-20201005191004670" style="zoom:67%;">
+
+<p><strong>编码的转换</strong></p>
+<p>当集合对象可以同时满足以下两个条件时， 对象使用 <code>intset</code> 编码：</p>
+<ol>
+<li>集合对象保存的所有元素都是整数值；</li>
+<li>集合对象保存的元素数量不超过 <code>512</code> 个；</li>
+</ol>
+<p>不能满足这两个条件的集合对象需要使用 <code>hashtable</code> 编码。</p>
+<hr>
+<h3 id="有序集合对象"><a href="#有序集合对象" class="headerlink" title="有序集合对象"></a>有序集合对象</h3><p>有序集合的编码可以是 <code>ziplist</code> 或者 <code>skiplist</code> 。</p>
+<p><code>ziplist</code> 编码的有序集合对象使用压缩列表作为底层实现， 每个集合元素使用两个紧挨在一起的压缩列表节点来保存， 第一个节点保存元素的成员（member）， 而第二个元素则保存元素的分值（score）。</p>
+<p>压缩列表内的集合元素按分值从小到大进行排序， 分值较小的元素被放置在靠近表头的方向， 而分值较大的元素则被放置在靠近表尾的方向。</p>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005191802735.png" alt="image-20201005191802735" style="zoom:67%;">
+
+<p><code>skiplist</code> 编码的有序集合对象使用 <code>zset</code> 结构作为底层实现， 一个 <code>zset</code> 结构同时包含一个字典和一个跳跃表</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">zset</span> &#123;</span></span><br><span class="line"></span><br><span class="line">    zskiplist *zsl;</span><br><span class="line"></span><br><span class="line">    dict *dict;</span><br><span class="line"></span><br><span class="line">&#125; zset;</span><br></pre></td></tr></table></figure>
+
+<p><code>zset</code> 结构中的 <code>zsl</code> 跳跃表按分值从小到大保存了所有集合元素， 每个跳跃表节点都保存了一个集合元素： 跳跃表节点的 <code>object</code> 属性保存了元素的成员， 而跳跃表节点的 <code>score</code> 属性则保存了元素的分值。 通过这个跳跃表， 程序可以对有序集合进行范围型操作， 比如 ZRANK 、 ZRANGE 等命令就是基于跳跃表 API 来实现的。</p>
+<p>除此之外， <code>zset</code> 结构中的 <code>dict</code> 字典为有序集合创建了一个从成员到分值的映射， 字典中的每个键值对都保存了一个集合元素： 字典的键保存了元素的成员， 而字典的值则保存了元素的分值。 通过这个字典， 程序可以用 O(1) 复杂度查找给定成员的分值， ZSCORE 命令就是根据这一特性实现的， 而很多其他有序集合命令都在实现的内部用到了这一特性</p>
+<img src="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/image-20201005192352716.png" alt="image-20201005192352716" style="zoom:67%;">
+
+<p><strong>编码的转换</strong></p>
+<p>当有序集合对象可以同时满足以下两个条件时， 对象使用 <code>ziplist</code> 编码：</p>
+<ol>
+<li>有序集合保存的元素数量小于 <code>128</code> 个；</li>
+<li>有序集合保存的所有元素成员的长度都小于 <code>64</code> 字节；</li>
+</ol>
+<p>不能满足以上两个条件的有序集合对象将使用 <code>skiplist</code> 编码。</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis数据结构之压缩列表</title>
     <url>/2020/09/30/Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B9%8B%E5%8E%8B%E7%BC%A9%E5%88%97%E8%A1%A8/</url>
     <content><![CDATA[<p>压缩列表是列表键和哈希键的底层实现之一。</p>

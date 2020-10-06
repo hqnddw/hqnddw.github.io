@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#fff">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/header.png?v=5.1.4" color="#fff">
+
+
+
+
+
+  <meta name="keywords" content="锁,原子操作," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="lwl的博客" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="锁的机制常用的锁机制有两种：  乐观锁：假设不会发生并发冲突，每次不加锁而去完成某项操作，只在提交操作时，检查是否违反数据完整性。如果因为冲突失败就继续重试，直到成功为止。而乐观锁用到的机制就是CAS  乐观锁大多是基于数据版本记录机制实现。为数据增加一个版本标识，比如在基于数据库表的版本解决方案中，一般是通过数据库表增加一个“version”字段来实现。读取数据时，将此版本号一同读出，之后更新时">
+<meta name="keywords" content="锁,原子操作">
+<meta property="og:type" content="article">
+<meta property="og:title" content="锁和CAS操作">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;05&#x2F;%E9%94%81%E5%92%8CCAS%E6%93%8D%E4%BD%9C&#x2F;index.html">
+<meta property="og:site_name" content="lwl的博客">
+<meta property="og:description" content="锁的机制常用的锁机制有两种：  乐观锁：假设不会发生并发冲突，每次不加锁而去完成某项操作，只在提交操作时，检查是否违反数据完整性。如果因为冲突失败就继续重试，直到成功为止。而乐观锁用到的机制就是CAS  乐观锁大多是基于数据版本记录机制实现。为数据增加一个版本标识，比如在基于数据库表的版本解决方案中，一般是通过数据库表增加一个“version”字段来实现。读取数据时，将此版本号一同读出，之后更新时">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2020-10-05T14:27:27.468Z">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/10/05/锁和CAS操作/"/>
+
+
+
+
+
+  <title>锁和CAS操作 | lwl的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lwl的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">To strive, to seek, to find, and not to yield</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/05/%E9%94%81%E5%92%8CCAS%E6%93%8D%E4%BD%9C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lwl">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/1.jfif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lwl的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">锁和CAS操作</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-10-05T21:44:04+08:00">
+                2020-10-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%94%81/" itemprop="url" rel="index">
+                    <span itemprop="name">锁</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="锁的机制"><a href="#锁的机制" class="headerlink" title="锁的机制"></a>锁的机制</h3><p><strong>常用的锁机制有两种：</strong></p>
+<ol>
+<li><p>乐观锁：假设不会发生并发冲突，每次不加锁而去完成某项操作，只在提交操作时，检查是否违反数据完整性。如果因为冲突失败就继续重试，直到成功为止。而乐观锁用到的机制就是CAS</p>
+<blockquote>
+<p><strong>乐观锁大多是基于数据版本记录机制实现。</strong>为数据增加一个版本标识，比如在基于数据库表的版本解决方案中，一般是通过数据库表增加一个“version”字段来实现。读取数据时，将此版本号一同读出，之后更新时，对此版本号加一。此时，<strong>将提交数据的版本数据与数据库表对应记录的当前版本信息进行比对，如果提交的数据版本号大于数据库表当前版本号，则予以更新，否则认为是过期数据。</strong>乐观锁的缺点是不能解决脏读的问题</p>
+</blockquote>
+</li>
+<li><p>悲观锁：假定会发生并发冲突，屏蔽一切可能违反数据完整性的操作。悲观锁的实现，往往依靠底层提供的锁机制。悲观锁会导致其他所有需要锁的线程挂起，等待持有锁的线程释放锁。如果所有线程都在等待其他线程释放锁，而不能主动释放锁资源，那么也会造成死锁问题</p>
+</li>
+</ol>
+<p><strong>锁的机制存在以下问题：</strong></p>
+<ol>
+<li>在多线程竞争下，加锁、释放锁会导致比较多的上下文切换和调度延时，引起性能问题</li>
+<li>一个线程持有锁会导致其他所有需要次所的线程挂起</li>
+<li>如果一个优先级高的线程等待一个优先级低的线程释放锁会导致优先级倒置，引起性能风险</li>
+</ol>
+<hr>
+<h3 id="CAS操作"><a href="#CAS操作" class="headerlink" title="CAS操作"></a>CAS操作</h3><p>Compare And Set（或Compare And Swap），CAS是解决多线程并行情况下使用锁造成性能损耗的一种机制，<strong>CAS操作包含三个操作数——内存位置（V）、预期原值（A）、新值（B）</strong>。如果内存位置的值与预期原值相同，那么处理器会自动将内存的值更新为新值。否则，处理器不做任何操作。无论哪种情况，处理器都会在CAS指令之前返回该位置的值。CAS有效地说明了“我认为位置V应该包含值A；如果包含该值，则将B放到这个位置；否则，不要更新该位置，只告诉我这个位置现在的值即可。”</p>
+<p>现在几乎所有的CPU指令都支持CAS的原子操作，X86下对应的是<strong>CMPXCHG</strong>汇编指令。有了这个操作，我们就可以用其来实现各种无锁的数据结构</p>
+<p>这个操作可以用以下的例子来描述，意思是，看一看内存*reg里的值是不是oldval，如果是的话，则对其赋值newval，并返回true，表示更新成功，如果返回false，则表示修改失败。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">compare_and_swap</span><span class="params">(<span class="keyword">int</span> *reg,<span class="keyword">int</span> oldval,<span class="keyword">int</span> newval)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> reg_val = *reg;</span><br><span class="line">    <span class="keyword">if</span>(reg_val == oldval)</span><br><span class="line">    &#123;</span><br><span class="line">        *reg = newval;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>CAS指令有什么缺点</strong>：</p>
+<ol>
+<li>存在ABA问题。因为CAS需要在操作值的时候检查下值有没有发生变化，如果没有发生变化则更新，但是<strong>如果一个值原来是A，变成了B，又变成了A</strong>，那么使用CAS进行检查时会发现它的值没有发生变化，但是实际上却变化了。ABA问题的解决思路就是使用版本号。在变量前面追加上版本号，每次变量更新的时候把版本号加一，那么A－B－A 就会变成1A-2B-3A</li>
+<li>循环时间长开销大。自旋CAS如果长时间不成功，会给CPU带来非常大的执行开销</li>
+<li>只能保证一个共享变量的原子操作对一个共享变量执行操作时，我们可以使用循环CAS的方式来保证原子操作，但是对多个共享变量操作时，循环CAS就无法保证操作的原子性，这个时候就可以用锁</li>
+</ol>
+<p>gcc从4.1.2提供了<em>_sync</em>*系列的built-in函数，用于提供加减和逻辑运算的原子操作：</p>
+<p>其声明如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">type __sync_fetch_and_add (type *ptr, type value, ...)</span><br><span class="line">type __sync_fetch_and_sub (type *ptr, type value, ...)</span><br><span class="line">type __sync_fetch_and_or (type *ptr, type value, ...)</span><br><span class="line">type __sync_fetch_and_and (type *ptr, type value, ...)</span><br><span class="line">type __sync_fetch_and_xor (type *ptr, type value, ...)</span><br><span class="line">type __sync_fetch_and_nand (type *ptr, type value, ...)</span><br><span class="line"></span><br><span class="line">type __sync_add_and_fetch (type *ptr, type value, ...)</span><br><span class="line">type __sync_sub_and_fetch (type *ptr, type value, ...)</span><br><span class="line">type __sync_or_and_fetch (type *ptr, type value, ...)</span><br><span class="line">type __sync_and_and_fetch (type *ptr, type value, ...)</span><br><span class="line">type __sync_xor_and_fetch (type *ptr, type value, ...)</span><br><span class="line">type __sync_nand_and_fetch (type *ptr, type value, ...)</span><br><span class="line"><span class="comment">// 这两组函数的区别在于第一组返回更新前的值，第二组返回更新后的值</span></span><br></pre></td></tr></table></figure>
+
+<p>示例程序：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="keyword">static</span> <span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">test_func</span><span class="params">(<span class="keyword">void</span> *arg)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span>(i=<span class="number">0</span>; i &lt; <span class="number">20000</span>; i++) &#123;</span><br><span class="line">        __sync_fetch_and_add(&amp;count,<span class="number">1</span>);</span><br><span class="line">        <span class="comment">//count++;</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">pthread_t</span> id[<span class="number">20</span>];</span><br><span class="line">    <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span>(i=<span class="number">0</span>; i &lt; <span class="number">20</span>; i++) &#123;</span><br><span class="line">        pthread_create(&amp;id[i],<span class="literal">NULL</span>,test_func,<span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span>(i=<span class="number">0</span>; i&lt;<span class="number">20</span>; ++i) &#123;</span><br><span class="line">        pthread_join(id[i],<span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,count);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="处理器是如何实现原子操作"><a href="#处理器是如何实现原子操作" class="headerlink" title="处理器是如何实现原子操作"></a>处理器是如何实现原子操作</h3><p><strong>总线锁定</strong></p>
+<p>如果多个处理器一起对共享变量进行读改写操作（i++就是典型的读改写操作），这个读改写操作就不是原子的。各个处理器将i的值读入自己的处理器缓存中，各自对各自的缓存里的i值进行操作，然后分别写入系统内存从而导致了问题的产生。要想对共享变量的读改写操作也是原子性的，必须保证，CPU1读改写共享变量的时候，CPU2不能操作该共享变量内存地址的缓存行。</p>
+<p>处理器的总线锁就是这么来保证原子性的，所谓总线锁就是使用处理器提供的一个LOCK#信号，当一个处理器在总线上输出此信号时，其他处理器的请求将会被阻塞住，那么该处理器可以独占共享内存</p>
+<blockquote>
+<p><strong>然而在同一时刻我们只需要保证对某一个内存地址的操作是原子性就可以了，但是总线锁把CPU和内存之间的通信锁住了，这使得锁定期间，其他处理器不能操作其他内存地址的数据，所以总线锁定的开销比较大</strong></p>
+</blockquote>
+<p><strong>缓存一致性</strong></p>
+<p>缓存一致性机制整体来说，是当某块CPU对缓存中的数据进行操作了之后，就通知其他CPU放弃储存在它们内部的缓存，或者从主内存中重新读取</p>
+<p>缓存一致性是通过<strong>MESI 协议</strong>实现的。MESI 协议是以缓存行(缓存的基本数据单位)的几个状态来命名的(全名是Modified、Exclusive、 Share or Invalid)。该协议要求在每个缓存行上维护两个状态位，使得每个数据单位可能处于M、E、S和I这四种状态之一，各种状态含义如下：</p>
+<ul>
+<li>被修改的。处于这一状态的数据，只在本CPU中有缓存数据，而其他CPU中没有。同时其状态相对于内存中的值来说，是已经被修改的，且没有更新到内存中</li>
+<li>独占的。处于这一状态的数据，只有在本CPU中有缓存，且其数据没有修改，即与内存中一致</li>
+<li>共享的。处于这一状态的数据在多个CPU中都有缓存，且与内存一致</li>
+<li>无效的。本CPU中的这份缓存已经无效</li>
+</ul>
+<p>一个处于M状态的缓存行，必须时刻监听所有试图读取该缓存行对应的主存地址的操作，如果监听到，则必须在此操作执行前把其缓存行中的数据写回CPU。<br>一个处于S状态的缓存行，必须时刻监听使该缓存行无效或者独享该缓存行的请求，如果监听到，则必须把其缓存行状态设置为I。<br>一个处于E状态的缓存行，必须时刻监听其他试图读取该缓存行对应的主存地址的操作，如果监听到，则必须把其缓存行状态设置为S</p>
+<p>当CPU需要读取数据时，如果其缓存行的状态是I的，则需要从内存中读取，并把自己状态变成S，如果不是I，则可以直接读取缓存中的值，但在此之前，必须要等待其他CPU的监听结果，如其他CPU也有该数据的缓存且状态是M，则需要等待其把缓存更新到内存之后，再读取</p>
+<p>当CPU需要写数据时，只有在其缓存行是M或者E的时候才能执行，否则需要发出特殊的RFO指令(Read Or Ownership，这是一种总线事务)，通知其他CPU置缓存无效(I)，这种情况下会性能开销是相对较大的。在写入完成后，修改其缓存状态为M</p>
+<p><strong>NOTE：并非所有情况都会使用缓存一致性的，如被操作的数据不能被缓存在CPU内部或操作数据跨越多个缓存行(状态无法标识)，则处理器会调用总线锁定;另外当CPU不支持缓存锁定时，自然也只能用总线锁定了</strong></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
+          
+            <a href="/tags/%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C/" rel="tag"># 原子操作</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/10/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/" rel="next" title="链表之快慢指针">
+                <i class="fa fa-chevron-left"></i> 链表之快慢指针
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/1.jfif"
+                alt="lwl" />
+            
+              <p class="site-author-name" itemprop="name">lwl</p>
+              <p class="site-description motion-element" itemprop="description">对未来的真正慷慨，是把一切都献给现在</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7Carchive">
+              
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">13</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/yourname" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:yourname@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/yourname" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-twitter"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://instagram.com/yourname" target="_blank" title="Instagram">
+                      
+                        <i class="fa fa-fw fa-instagram"></i>Instagram</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#锁的机制"><span class="nav-number">1.</span> <span class="nav-text">锁的机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CAS操作"><span class="nav-number">2.</span> <span class="nav-text">CAS操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#处理器是如何实现原子操作"><span class="nav-number">3.</span> <span class="nav-text">处理器是如何实现原子操作</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lwl</span>
+
+  
+</div>
+
+<!-- 
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+ -->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

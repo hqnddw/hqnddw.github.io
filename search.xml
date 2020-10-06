@@ -1,6 +1,182 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>一致性哈希算法原理</title>
+    <url>/2020/10/06/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/</url>
+    <content><![CDATA[<h3 id="一致性哈希算法的原理"><a href="#一致性哈希算法的原理" class="headerlink" title="一致性哈希算法的原理"></a>一致性哈希算法的原理</h3><p><strong>传统哈希(硬哈希)</strong></p>
+<p>分布式系统中，假设有 n 个节点，传统方案使用 <code>mod(key, n)</code> 映射数据和节点</p>
+<p>当扩容或缩容时(哪怕只是增减1个节点)，映射关系变为 <code>mod(key, n+1)</code> / <code>mod(key, n-1)</code>，绝大多数数据的映射关系都会失效。</p>
+<p> <strong>一致性哈希(Consistent Hashing)</strong></p>
+<p>一致性hash时采用如下步骤：</p>
+<ol>
+<li>首先求出memcached服务器（节点）的哈希值，并将其配置到0～2^32的圆（continuum）上。</li>
+<li>然后采用同样的方法求出存储数据的键的哈希值，并映射到相同的圆上。</li>
+<li>然后从数据映射到的位置开始<strong>顺时针</strong>查找，将数据保存到找到的第一个服务器上。如果超过2^32仍然找不到服务器，就会保存到第一台memcached服务器上</li>
+</ol>
+<img src="/2020/10/06/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/498077-20160822172408386-366341651.png" alt="img" style="zoom:80%;">
+
+<p>从上图的状态中添加一台memcached服务器。余数分布式算法由于保存键的服务器会发生巨大变化而影响缓存的命中率，但Consistent Hashing中，只有在园（continuum）上增加服务器的地点逆时针方向的第一台服务器上的键会受到影响，如下图所示：</p>
+<img src="/2020/10/06/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/498077-20160822172431933-546286787.png" alt="img" style="zoom: 80%;">
+
+<p><strong>一致性哈希的数据倾斜问题</strong></p>
+<p>一致性Hash算法在服务节点太少时，容易因为节点分部不均匀而造成数据倾斜（被缓存的对象大部分集中缓存在某一台服务器上）问题。比如只有 2 台机器，这 2 台机器离的很近，那么顺时针第一个机器节点上将存在大量的数据，第二个机器节点上数据会很少。如下图所示，D0 机器承载了绝大多数的数据</p>
+<img src="/2020/10/06/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/9463862-5c4a30fc748af580.png" alt="img" style="zoom:80%;">
+
+<p>为了避免出现数据倾斜问题，一致性 Hash 算法引入了<strong>虚拟节点的机制</strong>，也就是每个机器节点会进行多次哈希，最终每个机器节点在哈希环上会有多个虚拟节点存在，使用这种方式来大大削弱甚至避免数据倾斜问题。同时数据定位算法不变，只是多了一步虚拟节点到实际节点的映射，例如定位到“D1#1”、“D1#2”、“D1#3”三个虚拟节点的数据均定位到 D1 上。这样就解决了服务节点少时数据倾斜的问题。在实际应用中，通常将虚拟节点数设置为32甚至更大，因此即使很少的服务节点也能做到相对均匀的数据分布</p>
+<img src="/2020/10/06/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/9463862-4a6ebf0a5fc331e6.png" alt="img" style="zoom:80%;">
+
+<p><strong>良好的分布式cahce系统中的一致性hash算法应该满足以下几个方面：</strong></p>
+<ul>
+<li><strong>平衡性(Balance)</strong></li>
+</ul>
+<p>平衡性是指哈希的结果能够尽可能分布到所有的缓冲中去，这样可以使得所有的缓冲空间都得到利用。很多哈希算法都能够满足这一条件。</p>
+<ul>
+<li><strong>单调性(Monotonicity)</strong></li>
+</ul>
+<p>单调性是指当地址空间增大时，通过哈希函数所得到的关键字的哈希地址也能映射的新的地址空间，而不是仅限于原先的地址空间。或等地址空间减少时，也是只能映射到有效的地址空间中。简单的哈希函数往往不能满足此性质。而在P2P系统内，缓冲的变化等价于Peer加入或退出系统，这一情况在P2P系统中会频繁发生，因此会带来极大计算和传输负荷。单调性就是要求哈希算法能够应对这种情况。</p>
+<ul>
+<li><strong>分散性(Spread)</strong></li>
+</ul>
+<p>在分布式环境中，终端有可能看不到所有的缓冲，而是只能看到其中的一部分。当终端希望通过哈希过程将内容映射到缓冲上时，由于不同终端所见的缓冲范围有可能不同，从而导致哈希的结果不一致，最终的结果是相同的内容被不同的终端映射到不同的缓冲区中。这种情况显然是应该避免的，因为它导致相同内容被存储到不同缓冲中去，降低了系统存储的效率。分散性的定义就是上述情况发生的严重程度。好的哈希算法应能够尽量避免不一致的情况发生，也就是尽量降低分散性。</p>
+<ul>
+<li><strong>负载(Load)</strong></li>
+</ul>
+<p>负载问题实际上是从另一个角度看待分散性问题。既然不同的终端可能将相同的内容映射到不同的缓冲区中，那么对于一个特定的缓冲区而言，也可能被不同的用户映射为不同的内容。与分散性一样，这种情况也是应当避免的，因此好的哈希算法应能够尽量降低缓冲的负荷。</p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+      </categories>
+      <tags>
+        <tag>分布式</tag>
+        <tag>哈希</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>建立TCP连接的系统调用</title>
+    <url>/2020/10/06/%E5%BB%BA%E7%AB%8BTCP%E8%BF%9E%E6%8E%A5%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8/</url>
+    <content><![CDATA[<p>建立TCP连接的过程中主要通过以下系统调用序列来获取某些函数，这些系统调用主要包括：socket（），bind（），listen（），accept（），send（）和recv（）。如下图所示：</p>
+<img src="/2020/10/06/%E5%BB%BA%E7%AB%8BTCP%E8%BF%9E%E6%8E%A5%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8/20180804211807158" alt="这里写图片描述" style="zoom:100%;">
+
+<p>socket所处层次：</p>
+<img src="/2020/10/06/%E5%BB%BA%E7%AB%8BTCP%E8%BF%9E%E6%8E%A5%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8/20180805091934884" alt="这里写图片描述" style="zoom:80%;">
+
+<h3 id="socket接口"><a href="#socket接口" class="headerlink" title="socket接口"></a><strong>socket接口</strong></h3><p>函数原型：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">socket</span><span class="params">(<span class="keyword">int</span> protofamily, <span class="keyword">int</span> so_type, <span class="keyword">int</span> protocol)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>参数解释：</strong></p>
+<ul>
+<li><p>protofamily： 指协议族，常见的值有：</p>
+<p>AF_INET，指定so_pcb中的地址要采用ipv4地址类型<br>AF_INET6，指定so_pcb中的地址要采用ipv6的地址类型<br>AF_LOCAL/AF_UNIX，指定so_pcb中的地址要使用绝对路径名</p>
+</li>
+<li><p>so_type：指定socket的类型，比较常用的类型有：</p>
+<p>SOCK_STREAM —– TCP类型，保证数据顺序及可靠性；<br>SOCK_DGRAM ——UDP类型，不保证数据接收的顺序，非可靠连接；<br>SOCK_RAW ——原始类型，允许对底层协议如IP或ICMP进行直接访问，不太常用</p>
+</li>
+<li><p>protocol： 指定具体的协议，也就是指定本次通信能接受的数据包的类型和发送数据包的类型，常见的值有：<br>IPPROTO_TCP，TCP协议<br>IPPROTO_UDP，UPD协议<br>如果调用者不希望特别指定使用的协议，则置为0，使用默认的连接模式。</p>
+</li>
+</ul>
+<p><strong>函数返回值：</strong>根据这三个参数建立一个套接字，并将相应的资源分配给它，同时返回一个整型套接字号</p>
+<hr>
+<h3 id="bind接口"><a href="#bind接口" class="headerlink" title="bind接口"></a><strong>bind接口</strong></h3><p><strong>函数原型</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">bind</span><span class="params">(<span class="keyword">int</span> sockfd, <span class="keyword">const</span> struct sockaddr *addr, <span class="keyword">socklen_t</span> addrlen)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>函数功能：</strong>将创建的socket绑定到指定的IP地址和端口上，通常是第二个调用的socket接口。当socket函数返回一个描述符时，只是存在于其协议族的空间中，并没有分配一个具体的协议地址（这里指IPv4/IPv6和端口号的组合），bind函数可以将一组固定的地址绑定到sockfd上</p>
+<p><strong>参数解释：</strong></p>
+<ul>
+<li>sockfd ： 是调用socket()函数创建的socket描述符</li>
+<li>addr ：指明要绑定的本地IP和端口号，使用网络字节序，即大端模式</li>
+<li>addrlen ：表示addr的长度</li>
+<li>返回值：0 – 成功，-1 – 出错。</li>
+</ul>
+<p><strong>需要注意的是：</strong><br>通常服务器在启动的时候都会绑定一个众所周知的协议地址，用于提供服务，客户就可以通过它来接连服务器；而客户端可以指定IP或端口也可以都不指定，未分配则系统自动分配。这就是为什么通常服务器端在listen之前会调用bind()，而客户端就不会调用，而是在connect()时由系统随机生成一个</p>
+<hr>
+<h3 id="listen接口"><a href="#listen接口" class="headerlink" title="listen接口"></a>listen接口</h3><p><strong>函数原型：</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">listen</span><span class="params">(<span class="keyword">int</span> sockfd, <span class="keyword">int</span> backlog)</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>参数解释：</strong></p>
+<ul>
+<li>sockfd：是调用socket()函数创建的socket描述符（套接字号）</li>
+<li>backlog：指定内核为此套接字维护的最大连接个数，该队列不能太长也不能没有，因为当队列太长时，需要耗费一定的资源进行维护和管理，没有的话也会降低操作系统的效率</li>
+<li>返回值：listen()成功时返回0，错误时返回-1。</li>
+</ul>
+<p><strong>函数功能：</strong><br>listen()函数仅被TCP类型的服务器程序调用，实现监听服务，它实现2件事情：</p>
+<ol>
+<li>当socket()创建1个socket时，被假设为主动式套接字，也就是说它是一个将调用connect()发起连接请求的客户端套接字；函数listen()将套接口转换为被动式套接字，指示内核接受向此套接字的连接请求，调用此系统调用后tcp 状态机由close转换到listen</li>
+<li>第2个参数指定了内核为此套接字排队的最大连接个数（半连接和全连接队列的和）</li>
+</ol>
+<hr>
+<h3 id="connect接口"><a href="#connect接口" class="headerlink" title="connect接口"></a>connect接口</h3><p><strong>函数原型：</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">connect</span><span class="params">(<span class="keyword">int</span> sockfd, struct sockaddr *serv_addr, <span class="keyword">int</span> addrlen)</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>函数功能：</strong><br>connect()通常由TCP类型客户端调用，用来与服务器建立一个TCP连接，实际是发起3次握手过程，连接成功返回0，连接失败返回-1。<br><strong>参数解释：</strong></p>
+<ul>
+<li>sockfd – 本地客户端额socket描述符；</li>
+<li>serv_addr – 服务器协议地址；</li>
+<li>addrlen – 地址缓冲区的长度。</li>
+</ul>
+<p><strong>需要注意的是：</strong></p>
+<ol>
+<li>可以在UDP连接使用使用connect()，作用是在UDP套接字中记住目的地址和目的端口</li>
+<li>UDP套接字使用connect后，如果数据报不是connect中指定的地址和端口，将被丢弃。没有调用connect的UDP套接字，将接收所有到达这个端口的UDP数据报，而不区分源端口和地址</li>
+</ol>
+<hr>
+<h3 id="accept接口"><a href="#accept接口" class="headerlink" title="accept接口"></a>accept接口</h3><p><strong>函数原型：</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">accept</span> <span class="params">(<span class="keyword">int</span> sockfd, struct sockaddr *addr, <span class="keyword">socklen_t</span> *addrlen)</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>函数功能：</strong><br>accept()函数仅被TCP类型的服务器程序调用，从已完成连接队列返回下一个建立成功的连接，如果已完成连接队列为空，线程进入阻塞态睡眠状态。成功时返回套接字描述符，错误时返回-1。<br><strong>参数解释：</strong></p>
+<ul>
+<li>sockfd – socket()函数返回的描述符;</li>
+<li>addr – 输出的一个sockaddr_in变量地址，该变量用来存放发起连接请求的客户端的协议地址；</li>
+<li>addrten – 作为输入时指明缓冲器的长度，作为输出时指明addr的实际长度。</li>
+</ul>
+<p><strong>需要注意的是：</strong><br>如果accpet()执行成功，返回由内核自动生成的一个全新socket描述符，用它引用与客户端的TCP连接。通常我们把accept()第一个参数称为监听套接字（listening socket），把accept()功能返回值作为已连接套接字（connected socket）。一个服务器通常只有1个监听套接字，监听客户端的连接请求；服务器内核为每一个客户端的TCP连接维护一个已连接套接字，用它实现数据双向通信</p>
+<hr>
+<h3 id="listen、connect、accept的执行流程"><a href="#listen、connect、accept的执行流程" class="headerlink" title="listen、connect、accept的执行流程"></a>listen、connect、accept的执行流程</h3><img src="/2020/10/06/%E5%BB%BA%E7%AB%8BTCP%E8%BF%9E%E6%8E%A5%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8/2018080511361662" alt="这里写图片描述" style="zoom:90%;">
+
+<ol>
+<li>服务器端在调用listen之后，内核会建立两个队列，SYN队列和ACCEPT队列，其中ACCPET队列的长度由backlog指定</li>
+<li>服务器端在调用accpet之后，将阻塞，等待ACCPT队列直到有元素</li>
+<li>客户端在调用connect之后，将开始发起SYN请求，请求与服务器建立连接，此时称为第一次握手</li>
+<li>服务器端在接受到SYN请求之后，把请求方放入SYN队列中，并给客户端回复一个确认帧ACK，此帧还会携带一个请求与客户端建立连接的请求标志，也就是SYN，这称为第二次握手</li>
+<li>客户端收到SYN+ACK帧后，connect返回，并发送确认建立连接帧ACK给服务器端。这称为第三次握手</li>
+<li>服务器端收到ACK帧后，会把请求方从SYN队列中移出，放至ACCEPT队列中，而accept函数也等到了自己的资源，从阻塞中唤醒，从ACCEPT队列中取出请求方，重新建立一个新的sockfd，并返回</li>
+</ol>
+<hr>
+<h3 id="send接口"><a href="#send接口" class="headerlink" title="send接口"></a>send接口</h3><p>**函数原型：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">send</span><span class="params">(<span class="keyword">int</span> sockfd, <span class="keyword">const</span> <span class="keyword">void</span> *msg, <span class="keyword">int</span> len, <span class="keyword">int</span> flags)</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>函数功能：</strong>主要是进行TCP类型的数据发送。<br><strong>参数解释：</strong></p>
+<ul>
+<li>sockfd – 发送端套接字描述符（非监听描述符）。</li>
+<li>msg – 待发送数据的缓冲区。</li>
+<li>len – 待发送数据的字节长度。</li>
+<li>flags – 一般情况下置为0。</li>
+</ul>
+<hr>
+<h3 id="recv接口"><a href="#recv接口" class="headerlink" title="recv接口"></a>recv接口</h3><p><strong>函数原型：</strong></p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">recv</span><span class="params">(<span class="keyword">int</span> sockfd, <span class="keyword">void</span> *buf, <span class="keyword">int</span> len, <span class="keyword">unsigned</span> <span class="keyword">int</span> flags)</span></span></span><br></pre></td></tr></table></figure>
+
+<p><strong>函数功能：</strong>主要用于TCP类型的数据接收。<br><strong>参数解释：</strong><br>- sockefd – 接收端套接字描述符（非监听描述符）；</p>
+<ul>
+<li>buf – 接收缓冲区的基地址；</li>
+<li>len – 以字节计算的接收缓冲区长度；</li>
+<li>flags – 一般情况下置为0。</li>
+</ul>
+<p><strong>返回值：</strong>recv()从接收缓冲区拷贝数据。成功时，返回拷贝的字节数，失败返回-1。</p>
+<ul>
+<li>阻塞模式下，recv/recvfrom将会阻塞到缓冲区里至少有一个字节(TCP)/至少有一个完整的UDP数据报才返回，没有数据时处于休眠状态。</li>
+<li>若非阻塞，则立即返回，有数据则返回拷贝的数据大小，否则返回错误-1。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>网络编程</category>
+      </categories>
+      <tags>
+        <tag>Socket</tag>
+        <tag>TCP</tag>
+        <tag>网络编程</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>锁和CAS操作</title>
     <url>/2020/10/05/%E9%94%81%E5%92%8CCAS%E6%93%8D%E4%BD%9C/</url>
     <content><![CDATA[<h3 id="锁的机制"><a href="#锁的机制" class="headerlink" title="锁的机制"></a>锁的机制</h3><p><strong>常用的锁机制有两种：</strong></p>

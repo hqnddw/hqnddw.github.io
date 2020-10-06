@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#fff">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/header.png?v=5.1.4" color="#fff">
+
+
+
+
+
+  <meta name="keywords" content="C++," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="lwl的博客" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="左值、右值左值是指表达式结束后依然存在的持久化对象，右值是指表达式结束时就不再存在的临时对象。所有的具名变量或者对象都是左值，而右值不具名。有一个可以区分左值和右值的便捷方法：看能不能对表达式取地址，如果能，则为左值，否则为右值。 移动语义，简单来说解决的是各种情形下对象的资源所有权转移的问题 示例： 1234567891011int i=0;&#x2F;&#x2F; i是左值， 0是右值class A &amp;#123;">
+<meta name="keywords" content="C++">
+<meta property="og:type" content="article">
+<meta property="og:title" content="右值引用、移动语义和完美转发">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E3%80%81%E7%A7%BB%E5%8A%A8%E8%AF%AD%E4%B9%89%E5%92%8C%E5%AE%8C%E7%BE%8E%E8%BD%AC%E5%8F%91&#x2F;index.html">
+<meta property="og:site_name" content="lwl的博客">
+<meta property="og:description" content="左值、右值左值是指表达式结束后依然存在的持久化对象，右值是指表达式结束时就不再存在的临时对象。所有的具名变量或者对象都是左值，而右值不具名。有一个可以区分左值和右值的便捷方法：看能不能对表达式取地址，如果能，则为左值，否则为右值。 移动语义，简单来说解决的是各种情形下对象的资源所有权转移的问题 示例： 1234567891011int i=0;&#x2F;&#x2F; i是左值， 0是右值class A &amp;#123;">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E3%80%81%E7%A7%BB%E5%8A%A8%E8%AF%AD%E4%B9%89%E5%92%8C%E5%AE%8C%E7%BE%8E%E8%BD%AC%E5%8F%91&#x2F;4427263-81a47fdc9b8d9e98.png">
+<meta property="og:updated_time" content="2020-10-06T11:16:55.706Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E3%80%81%E7%A7%BB%E5%8A%A8%E8%AF%AD%E4%B9%89%E5%92%8C%E5%AE%8C%E7%BE%8E%E8%BD%AC%E5%8F%91&#x2F;4427263-81a47fdc9b8d9e98.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/10/06/右值引用、移动语义和完美转发/"/>
+
+
+
+
+
+  <title>右值引用、移动语义和完美转发 | lwl的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lwl的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">To strive, to seek, to find, and not to yield</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/06/%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E3%80%81%E7%A7%BB%E5%8A%A8%E8%AF%AD%E4%B9%89%E5%92%8C%E5%AE%8C%E7%BE%8E%E8%BD%AC%E5%8F%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lwl">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/1.jfif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lwl的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">右值引用、移动语义和完美转发</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-10-06T19:03:33+08:00">
+                2020-10-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index">
+                    <span itemprop="name">C++</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="左值、右值"><a href="#左值、右值" class="headerlink" title="左值、右值"></a><strong>左值、右值</strong></h3><p>左值是指表达式结束后依然存在的<strong>持久化对象</strong>，右值是指表达式结束时就不再存在的<strong>临时对象</strong>。所有的具名变量或者对象都是左值，而右值不具名。有一个可以区分左值和右值的便捷方法：<strong>看能不能对表达式取地址，如果能，则为左值，否则为右值</strong>。</p>
+<p><strong>移动语义</strong>，简单来说解决的是各种情形下<strong>对象的资源所有权转移</strong>的问题</p>
+<p>示例：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> i=<span class="number">0</span>;<span class="comment">// i是左值， 0是右值</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> a;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">A <span class="title">getTemp</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> A();</span><br><span class="line">&#125;</span><br><span class="line">A a = getTemp();   <span class="comment">// a是左值  getTemp()的返回值是右值（临时变量）</span></span><br></pre></td></tr></table></figure>
+
+<p>c++11中的右值引用使用的符号是&amp;&amp;</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span>&amp;&amp; a = <span class="number">1</span>; <span class="comment">//实质上就是将不具名(匿名)变量取了个别名</span></span><br><span class="line"><span class="keyword">int</span> b = <span class="number">1</span>;</span><br><span class="line"><span class="keyword">int</span>&amp;&amp; c = b; <span class="comment">//编译错误！ 不能将一个左值复制给一个右值引用</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> a;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">A <span class="title">getTemp</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> A();</span><br><span class="line">&#125;</span><br><span class="line">A&amp;&amp; a = getTemp();   <span class="comment">//getTemp()的返回值是右值（临时变量）</span></span><br></pre></td></tr></table></figure>
+
+<p><code>getTemp()</code>返回的右值本来在表达式语句结束后，其生命也就该终结了（因为是临时变量），而通过右值引用，该右值又重获新生，其生命期将与右值引用类型变量<code>a</code>的生命期一样，只要<code>a</code>还活着，该右值临时变量将会一直存活下去。实际上就是给那个临时变量取了个名字</p>
+<p><strong>常量左值引用</strong>却是一个“万能”的引用类型，它可以绑定<strong>非常量左值</strong>、<strong>常量左值</strong>、<strong>右值</strong>，而且在绑定右值的时候，常量左值引用还可以像右值引用一样将右值的生命期延长，缺点是，只能读不能改</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="keyword">int</span> &amp; a = <span class="number">1</span>; <span class="comment">//常量左值引用绑定右值， 不会报错</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span> &#123;</span></span><br><span class="line">  <span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">int</span> a;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">A <span class="title">getTemp</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> A();</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">const</span> A &amp; a = getTemp();   <span class="comment">//不会报错 而 A&amp; a 会报错</span></span><br></pre></td></tr></table></figure>
+
+<p>事实上，很多情况下我们用来常量左值引用的这个功能却没有意识到，如下面的例子：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Copyable</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    Copyable()&#123;&#125;</span><br><span class="line">    Copyable(<span class="keyword">const</span> Copyable &amp;o) &#123;</span><br><span class="line">        <span class="built_in">cout</span> &lt;&lt; <span class="string">"Copied"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">Copyable <span class="title">ReturnRvalue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> Copyable(); <span class="comment">//返回一个临时对象</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">AcceptVal</span><span class="params">(Copyable a)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">AcceptRef</span><span class="params">(<span class="keyword">const</span> Copyable&amp; a)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"pass by value: "</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    AcceptVal(ReturnRvalue()); <span class="comment">// 应该调用两次拷贝构造函数</span></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"pass by reference: "</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    AcceptRef(ReturnRvalue()); <span class="comment">//应该只调用一次拷贝构造函数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>期望</strong>中<code>AcceptVal(ReturnRvalue())</code>需要调用两次拷贝构造函数，一次在<code>ReturnRvalue()</code>函数中，构造好了<code>Copyable</code>对象，返回的时候会调用拷贝构造函数生成一个临时对象，在调用<code>AcceptVal()</code>时，又会将这个对象拷贝给函数的局部变量<code>a</code>，一共调用了两次拷贝构造函数。而<code>AcceptRef()</code>的不同在于形参是常量左值引用，它能够接收一个右值，而且不需要拷贝</p>
+<p><strong>而实际的结果是，不管哪种方式，一次拷贝构造函数都没有调用！</strong></p>
+<p>这是由于编译器默认开启了返回值优化(RVO, Return Value Optimization)。编译器很聪明，发现在<code>ReturnRvalue</code>内部生成了一个对象，返回之后还需要生成一个临时对象调用拷贝构造函数，很麻烦，所以直接优化成了1个对象对象，避免拷贝，而这个临时变量又被赋值给了函数的形参，还是没必要，所以最后这三个变量都用一个变量替代了，不需要调用拷贝构造函数。</p>
+</blockquote>
+<p>为了更好的观察结果，可以在编译的时候加上<code>-fno-elide-constructors</code>选项(关闭返回值优化)。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// g++ test.cpp -o test -fno-elide-constructors</span></span><br><span class="line">pass by value: </span><br><span class="line">Copied</span><br><span class="line">Copied <span class="comment">//可以看到确实调用了两次拷贝构造函数</span></span><br><span class="line">pass by reference: </span><br><span class="line">Copied</span><br></pre></td></tr></table></figure>
+
+<p>上面这个例子本意是想说明常量左值引用能够绑定一个右值，可以减少一次拷贝（使用非常量的左值引用会编译失败）</p>
+<p>总结一下</p>
+<ol>
+<li>左值引用， 使用 <code>T&amp;</code>, 只能绑定<strong>左值</strong></li>
+<li>右值引用， 使用 <code>T&amp;&amp;</code>， 只能绑定<strong>右值</strong></li>
+<li>常量左值， 使用 <code>const T&amp;</code>, 既可以绑定<strong>左值</strong>又可以绑定<strong>右值</strong></li>
+<li>已命名的<strong>右值引用</strong>，编译器会认为是个<strong>左值</strong></li>
+</ol>
+<hr>
+<h3 id="移动构造和移动赋值"><a href="#移动构造和移动赋值" class="headerlink" title="移动构造和移动赋值"></a><strong>移动构造和移动赋值</strong></h3><p>回顾一下如何用c++实现一个字符串类<code>MyString</code>，<code>MyString</code>内部管理一个C语言的<code>char *</code>数组，这个时候一般都需要实现拷贝构造函数和拷贝赋值函数</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyString</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">size_t</span> CCtor; <span class="comment">//统计调用拷贝构造函数的次数</span></span><br><span class="line"><span class="comment">//    static size_t CCtor; //统计调用拷贝构造函数的次数</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// 构造函数</span></span><br><span class="line">   MyString(<span class="keyword">const</span> <span class="keyword">char</span>* cstr=<span class="number">0</span>)&#123;</span><br><span class="line">       <span class="keyword">if</span> (cstr) &#123;</span><br><span class="line">          m_data = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="built_in">strlen</span>(cstr)+<span class="number">1</span>];</span><br><span class="line">          <span class="built_in">strcpy</span>(m_data, cstr);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">else</span> &#123;</span><br><span class="line">          m_data = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="number">1</span>];</span><br><span class="line">          *m_data = <span class="string">'\0'</span>;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 拷贝构造函数</span></span><br><span class="line">   MyString(<span class="keyword">const</span> MyString&amp; str) &#123;</span><br><span class="line">       CCtor ++;</span><br><span class="line">       m_data = <span class="keyword">new</span> <span class="keyword">char</span>[ <span class="built_in">strlen</span>(str.m_data) + <span class="number">1</span> ];</span><br><span class="line">       <span class="built_in">strcpy</span>(m_data, str.m_data);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">// 拷贝赋值函数 =号重载</span></span><br><span class="line">   MyString&amp; <span class="keyword">operator</span>=(<span class="keyword">const</span> MyString&amp; str)&#123;</span><br><span class="line">       <span class="keyword">if</span> (<span class="keyword">this</span> == &amp;str) <span class="comment">// 避免自我赋值!!</span></span><br><span class="line">          <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">delete</span>[] m_data;</span><br><span class="line">       m_data = <span class="keyword">new</span> <span class="keyword">char</span>[ <span class="built_in">strlen</span>(str.m_data) + <span class="number">1</span> ];</span><br><span class="line">       <span class="built_in">strcpy</span>(m_data, str.m_data);</span><br><span class="line">       <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   ~MyString() &#123;</span><br><span class="line">       <span class="keyword">delete</span>[] m_data;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">char</span>* <span class="title">get_c_str</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> m_data; &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">   <span class="keyword">char</span>* m_data;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">size_t</span> MyString::CCtor = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">vector</span>&lt;MyString&gt; vecStr;</span><br><span class="line">    vecStr.reserve(<span class="number">1000</span>); <span class="comment">//先分配好1000个空间，不这么做，调用的次数可能远大于1000</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">1000</span>;i++)&#123;</span><br><span class="line">        vecStr.push_back(MyString(<span class="string">"hello"</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; MyString::CCtor &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码看起来挺不错，却发现执行了<code>1000</code>次拷贝构造函数，如果<code>MyString(&quot;hello&quot;)</code>构造出来的字符串本来就很长，构造一遍就很耗时了，最后却还要拷贝一遍，而<code>MyString(&quot;hello&quot;)</code>只是临时对象，拷贝完就没什么用了，这就造成了没有意义的资源申请和释放操作，如果能够直接使用临时对象已经申请的资源，既能节省资源，又能节省资源申请和释放的时间。而<code>C++11</code>新增加的<strong>移动语义</strong>就能够做到这一点。</p>
+<p>要实现移动语义就必须增加两个函数：<strong>移动构造函数</strong>和<strong>移动赋值构造函数</strong>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyString</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">size_t</span> CCtor; <span class="comment">//统计调用拷贝构造函数的次数</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">size_t</span> MCtor; <span class="comment">//统计调用移动构造函数的次数</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">size_t</span> CAsgn; <span class="comment">//统计调用拷贝赋值函数的次数</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">size_t</span> MAsgn; <span class="comment">//统计调用移动赋值函数的次数</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// 构造函数</span></span><br><span class="line">   MyString(<span class="keyword">const</span> <span class="keyword">char</span>* cstr=<span class="number">0</span>)&#123;</span><br><span class="line">       <span class="keyword">if</span> (cstr) &#123;</span><br><span class="line">          m_data = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="built_in">strlen</span>(cstr)+<span class="number">1</span>];</span><br><span class="line">          <span class="built_in">strcpy</span>(m_data, cstr);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">else</span> &#123;</span><br><span class="line">          m_data = <span class="keyword">new</span> <span class="keyword">char</span>[<span class="number">1</span>];</span><br><span class="line">          *m_data = <span class="string">'\0'</span>;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 拷贝构造函数</span></span><br><span class="line">   MyString(<span class="keyword">const</span> MyString&amp; str) &#123;</span><br><span class="line">       CCtor ++;</span><br><span class="line">       m_data = <span class="keyword">new</span> <span class="keyword">char</span>[ <span class="built_in">strlen</span>(str.m_data) + <span class="number">1</span> ];</span><br><span class="line">       <span class="built_in">strcpy</span>(m_data, str.m_data);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">// 移动构造函数</span></span><br><span class="line">   MyString(MyString&amp;&amp; str) <span class="keyword">noexcept</span></span><br><span class="line">       :m_data(str.m_data) &#123;</span><br><span class="line">       MCtor ++;</span><br><span class="line">       str.m_data = <span class="literal">nullptr</span>; <span class="comment">//不再指向之前的资源了</span></span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 拷贝赋值函数 =号重载</span></span><br><span class="line">   MyString&amp; <span class="keyword">operator</span>=(<span class="keyword">const</span> MyString&amp; str)&#123;</span><br><span class="line">       CAsgn ++;</span><br><span class="line">       <span class="keyword">if</span> (<span class="keyword">this</span> == &amp;str) <span class="comment">// 避免自我赋值!!</span></span><br><span class="line">          <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">delete</span>[] m_data;</span><br><span class="line">       m_data = <span class="keyword">new</span> <span class="keyword">char</span>[ <span class="built_in">strlen</span>(str.m_data) + <span class="number">1</span> ];</span><br><span class="line">       <span class="built_in">strcpy</span>(m_data, str.m_data);</span><br><span class="line">       <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 移动赋值函数 =号重载</span></span><br><span class="line">   MyString&amp; <span class="keyword">operator</span>=(MyString&amp;&amp; str) <span class="keyword">noexcept</span>&#123;</span><br><span class="line">       MAsgn ++;</span><br><span class="line">       <span class="keyword">if</span> (<span class="keyword">this</span> == &amp;str) <span class="comment">// 避免自我赋值!!</span></span><br><span class="line">          <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line"></span><br><span class="line">       <span class="keyword">delete</span>[] m_data;</span><br><span class="line">       m_data = str.m_data;</span><br><span class="line">       str.m_data = <span class="literal">nullptr</span>; <span class="comment">//不再指向之前的资源了</span></span><br><span class="line">       <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   ~MyString() &#123;</span><br><span class="line">       <span class="keyword">delete</span>[] m_data;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">char</span>* <span class="title">get_c_str</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> m_data; &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">   <span class="keyword">char</span>* m_data;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">size_t</span> MyString::CCtor = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">size_t</span> MyString::MCtor = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">size_t</span> MyString::CAsgn = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">size_t</span> MyString::MAsgn = <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">vector</span>&lt;MyString&gt; vecStr;</span><br><span class="line">    vecStr.reserve(<span class="number">1000</span>); <span class="comment">//先分配好1000个空间</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">1000</span>;i++)&#123;</span><br><span class="line">        vecStr.push_back(MyString(<span class="string">"hello"</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"CCtor = "</span> &lt;&lt; MyString::CCtor &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"MCtor = "</span> &lt;&lt; MyString::MCtor &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"CAsgn = "</span> &lt;&lt; MyString::CAsgn &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"MAsgn = "</span> &lt;&lt; MyString::MAsgn &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 结果</span></span><br><span class="line"><span class="comment">CCtor = 0</span></span><br><span class="line"><span class="comment">MCtor = 1000</span></span><br><span class="line"><span class="comment">CAsgn = 0</span></span><br><span class="line"><span class="comment">MAsgn = 0</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+
+<p>可以看到，移动构造函数与拷贝构造函数的区别是，拷贝构造的参数是<code>const MyString&amp; str</code>，是<em>常量左值引用</em>，而移动构造的参数是<code>MyString&amp;&amp; str</code>，是<em>右值引用</em>，而<code>MyString(&quot;hello&quot;)</code>是个临时对象，是个右值，优先进入<strong>移动构造函数</strong>而不是拷贝构造函数。而移动构造函数与拷贝构造不同，它并不是重新分配一块新的空间，将要拷贝的对象复制过来，将自己的指针指向别人的资源，然后将别人的指针修改为nullptr。下面这张图可以解释copy和move的区别。</p>
+<img src="/2020/10/06/%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E3%80%81%E7%A7%BB%E5%8A%A8%E8%AF%AD%E4%B9%89%E5%92%8C%E5%AE%8C%E7%BE%8E%E8%BD%AC%E5%8F%91/4427263-81a47fdc9b8d9e98.png" alt="img" style="zoom:85%;">
+
+
+
+<p>对于一个左值，肯定是调用拷贝构造函数了，但是有些左值是局部变量，生命周期也很短，能不能也移动而不是拷贝呢？<code>C++11</code>为了解决这个问题，提供了<code>std::move()</code>方法来将左值转换为右值，从而方便应用移动语义。<strong>std::move()实际上是static_cast&lt;T&amp;&amp;&gt;()的简单封装。</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">vector</span>&lt;MyString&gt; vecStr;</span><br><span class="line">    vecStr.reserve(<span class="number">1000</span>); <span class="comment">//先分配好1000个空间</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">1000</span>;i++)&#123;</span><br><span class="line">        <span class="function">MyString <span class="title">tmp</span><span class="params">(<span class="string">"hello"</span>)</span></span>;</span><br><span class="line">        vecStr.push_back(tmp); <span class="comment">//调用的是拷贝构造函数</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"CCtor = "</span> &lt;&lt; MyString::CCtor &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"MCtor = "</span> &lt;&lt; MyString::MCtor &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"CAsgn = "</span> &lt;&lt; MyString::CAsgn &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"MAsgn = "</span> &lt;&lt; MyString::MAsgn &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    MyString::CCtor = <span class="number">0</span>;</span><br><span class="line">    MyString::MCtor = <span class="number">0</span>;</span><br><span class="line">    MyString::CAsgn = <span class="number">0</span>;</span><br><span class="line">    MyString::MAsgn = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">vector</span>&lt;MyString&gt; vecStr2;</span><br><span class="line">    vecStr2.reserve(<span class="number">1000</span>); <span class="comment">//先分配好1000个空间</span></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">1000</span>;i++)&#123;</span><br><span class="line">        <span class="function">MyString <span class="title">tmp</span><span class="params">(<span class="string">"hello"</span>)</span></span>;</span><br><span class="line">        vecStr2.push_back(<span class="built_in">std</span>::move(tmp)); <span class="comment">//调用的是移动构造函数</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"CCtor = "</span> &lt;&lt; MyString::CCtor &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"MCtor = "</span> &lt;&lt; MyString::MCtor &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"CAsgn = "</span> &lt;&lt; MyString::CAsgn &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"MAsgn = "</span> &lt;&lt; MyString::MAsgn &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 运行结果</span></span><br><span class="line"><span class="comment">CCtor = 1000</span></span><br><span class="line"><span class="comment">MCtor = 0</span></span><br><span class="line"><span class="comment">CAsgn = 0</span></span><br><span class="line"><span class="comment">MAsgn = 0</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">CCtor = 0</span></span><br><span class="line"><span class="comment">MCtor = 1000</span></span><br><span class="line"><span class="comment">CAsgn = 0</span></span><br><span class="line"><span class="comment">MAsgn = 0</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure>
+
+<p>下面再举几个例子：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">MyString <span class="title">str1</span><span class="params">(<span class="string">"hello"</span>)</span></span>; <span class="comment">//调用构造函数</span></span><br><span class="line"><span class="function">MyString <span class="title">str2</span><span class="params">(<span class="string">"world"</span>)</span></span>; <span class="comment">//调用构造函数</span></span><br><span class="line"><span class="function">MyString <span class="title">str3</span><span class="params">(str1)</span></span>; <span class="comment">//调用拷贝构造函数</span></span><br><span class="line"><span class="function">MyString <span class="title">str4</span><span class="params">(<span class="built_in">std</span>::move(str1))</span></span>; <span class="comment">// 调用移动构造函数、</span></span><br><span class="line"><span class="comment">//    cout &lt;&lt; str1.get_c_str() &lt;&lt; endl; // 此时str1的内部指针已经失效了！不要使用</span></span><br><span class="line"><span class="comment">//注意：虽然str1中的m_dat已经称为了空，但是str1这个对象还活着，知道出了它的作用域才会析构！而不是move完了立刻析构</span></span><br><span class="line">MyString str5;</span><br><span class="line">str5 = str2; <span class="comment">//调用拷贝赋值函数</span></span><br><span class="line">MyString str6;</span><br><span class="line">str6 = <span class="built_in">std</span>::move(str2); <span class="comment">// //调用移动赋值函数，str2的内容也失效了，不要再使用</span></span><br></pre></td></tr></table></figure>
+
+<p>需要注意一下几点：</p>
+<ol>
+<li><code>str6 = std::move(str2)</code>，虽然将<code>str2</code>的资源给了<code>str6</code>，但是<code>str2</code>并没有立刻析构，只有在<code>str2</code>离开了自己的作用域的时候才会析构，所以，如果继续使用<code>str2</code>的<code>m_data</code>变量，可能会发生意想不到的错误。</li>
+<li>如果我们没有提供移动构造函数，只提供了拷贝构造函数，<code>std::move()</code>会失效但是不会发生错误，因为编译器找不到移动构造函数就去寻找拷贝构造函数，也这是拷贝构造函数的参数是<code>const T&amp;</code>常量左值引用的原因</li>
+<li><code>c++11</code>中的所有容器都实现了<code>move</code>语义，<code>move</code>只是转移了资源的控制权，本质上是将左值强制转化为右值使用，以用于移动拷贝或赋值，避免对<strong>含有资源的对象</strong>发生无谓的拷贝。<code>move</code>对于拥有如内存、文件句柄等资源的成员的对象有效，如果是一些基本类型，如int和char[10]数组等，如果使用move，仍会发生拷贝（因为没有对应的移动构造函数），所以说<code>move</code>对含有资源的对象说更有意义</li>
+</ol>
+<p><strong>universal references(通用引用)</strong></p>
+<p>当右值引用和模板结合的时候，就复杂了。<code>T&amp;&amp;</code>并不一定表示右值引用，它可能是个左值引用又可能是个右值引用。例如:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">( T&amp;&amp; param)</span></span>&#123;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line">f(<span class="number">10</span>);  <span class="comment">//10是右值</span></span><br><span class="line"><span class="keyword">int</span> x = <span class="number">10</span>; <span class="comment">//</span></span><br><span class="line">f(x); <span class="comment">//x是左值</span></span><br></pre></td></tr></table></figure>
+
+<p>如果上面的函数模板表示的是右值引用的话，肯定是不能传递左值的，但是事实却是可以。这里的<code>&amp;&amp;</code>是一个未定义的引用类型，称为<code>universal references</code>，它必须被初始化，它是左值引用还是右值引用却决于它的初始化，如果它被一个左值初始化，它就是一个左值引用；如果被一个右值初始化，它就是一个右值引用</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">( T&amp;&amp; param)</span></span>; <span class="comment">//这里T的类型需要推导，所以&amp;&amp;是一个 universal references</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span> &#123;</span></span><br><span class="line">  Test(Test&amp;&amp; rhs); <span class="comment">//Test是一个特定的类型，不需要类型推导，所以&amp;&amp;表示右值引用  </span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(Test&amp;&amp; param)</span></span>; <span class="comment">//右值引用</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//复杂一点</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(<span class="built_in">std</span>::<span class="built_in">vector</span>&lt;T&gt;&amp;&amp; param)</span></span>; <span class="comment">//在调用这个函数之前，这个vector&lt;T&gt;中的推断类型</span></span><br><span class="line"><span class="comment">//已经确定了，所以调用f函数的时候没有类型推断了，所以是 右值引用</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(<span class="keyword">const</span> T&amp;&amp; param)</span></span>; <span class="comment">//右值引用</span></span><br><span class="line"><span class="comment">// universal references仅仅发生在 T&amp;&amp; 下面，任何一点附加条件都会使之失效</span></span><br></pre></td></tr></table></figure>
+
+<p>所以最终还是要看<code>T</code>被推导成什么类型，如果<code>T</code>被推导成了<code>string</code>，那么<code>T&amp;&amp;</code>就是<code>string&amp;&amp;</code>，是个右值引用，如果<code>T</code>被推导为<code>string&amp;</code>，就会发生类似<code>string&amp; &amp;&amp;</code>的情况，对于这种情况，<code>c++11</code>增加了引用折叠的规则，总结如下：</p>
+<ol>
+<li>所有的右值引用叠加到右值引用上仍然使一个右值引用。</li>
+<li>所有的其他引用类型之间的叠加都将变成左值引用。</li>
+</ol>
+<p>例子</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;type_traits&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">f</span><span class="params">(T&amp;&amp; param)</span></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">std</span>::is_same&lt;<span class="built_in">string</span>, T&gt;::value)</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"string"</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="built_in">std</span>::is_same&lt;<span class="built_in">string</span>&amp;, T&gt;::value)</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"string&amp;"</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="built_in">std</span>::is_same&lt;<span class="built_in">string</span>&amp;&amp;, T&gt;::value)</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"string&amp;&amp;"</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="built_in">std</span>::is_same&lt;<span class="keyword">int</span>, T&gt;::value)</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"int"</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="built_in">std</span>::is_same&lt;<span class="keyword">int</span>&amp;, T&gt;::value)</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"int&amp;"</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="built_in">std</span>::is_same&lt;<span class="keyword">int</span>&amp;&amp;, T&gt;::value)</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"int&amp;&amp;"</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"unkown"</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> x = <span class="number">1</span>;</span><br><span class="line">    f(<span class="number">1</span>); <span class="comment">// 参数是右值 T推导成了int, 所以是int&amp;&amp; param, 右值引用</span></span><br><span class="line">    f(x); <span class="comment">// 参数是左值 T推导成了int&amp;, 所以是int&amp;&amp;&amp; param, 折叠成 int&amp;,左值引用</span></span><br><span class="line">    <span class="keyword">int</span> &amp;&amp; a = <span class="number">2</span>;</span><br><span class="line">    f(a); <span class="comment">//虽然a是右值引用，但它还是一个左值， T推导成了int&amp;</span></span><br><span class="line">    <span class="built_in">string</span> str = <span class="string">"hello"</span>;</span><br><span class="line">    f(str); <span class="comment">//参数是左值 T推导成了string&amp;</span></span><br><span class="line">    f(<span class="built_in">string</span>(<span class="string">"hello"</span>)); <span class="comment">//参数是右值， T推导成了string</span></span><br><span class="line">    f(<span class="built_in">std</span>::move(str));<span class="comment">//参数是右值， T推导成了string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以，归纳一下， 传递左值进去，就是左值引用，传递右值进去，就是右值引用。如它的名字，这种类型确实很”通用”，下面要讲的完美转发，就利用了这个特性</p>
+<hr>
+<h3 id="完美转发"><a href="#完美转发" class="headerlink" title="完美转发"></a><strong>完美转发</strong></h3><p>所谓转发，就是通过一个函数将参数继续转交给另一个函数进行处理，原参数可能是右值，可能是左值，如果还能继续保持参数的原有特征，那么它就是完美的。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(<span class="keyword">int</span>&amp; i)</span></span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"process(int&amp;):"</span> &lt;&lt; i &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">process</span><span class="params">(<span class="keyword">int</span>&amp;&amp; i)</span></span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"process(int&amp;&amp;):"</span> &lt;&lt; i &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">myforward</span><span class="params">(<span class="keyword">int</span>&amp;&amp; i)</span></span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"myforward(int&amp;&amp;):"</span> &lt;&lt; i &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    process(i);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a = <span class="number">0</span>;</span><br><span class="line">    process(a); <span class="comment">//a被视为左值 process(int&amp;):0</span></span><br><span class="line">    process(<span class="number">1</span>); <span class="comment">//1被视为右值 process(int&amp;&amp;):1</span></span><br><span class="line">    process(move(a)); <span class="comment">//强制将a由左值改为右值 process(int&amp;&amp;):0</span></span><br><span class="line">    myforward(<span class="number">2</span>);  <span class="comment">//右值经过forward函数转交给process函数，却称为了一个左值，</span></span><br><span class="line">    <span class="comment">//原因是该右值有了名字  所以是 process(int&amp;):2</span></span><br><span class="line">    myforward(move(a));  <span class="comment">// 同上，在转发的时候右值变成了左值  process(int&amp;):0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的例子就是不完美转发，而c++中提供了一个<code>std::forward()</code>模板函数解决这个问题。将上面的<code>myforward()</code>函数简单改写一下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">myforward</span><span class="params">(<span class="keyword">int</span>&amp;&amp; i)</span></span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"myforward(int&amp;&amp;):"</span> &lt;&lt; i &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    process(<span class="built_in">std</span>::forward&lt;<span class="keyword">int</span>&gt;(i));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">myforward(<span class="number">2</span>); <span class="comment">// process(int&amp;&amp;):2</span></span><br></pre></td></tr></table></figure>
+
+<p>上面修改过后还是不完美转发，<code>myforward()</code>函数能够将右值转发过去，但是并不能够转发左值，解决办法就是借助<code>universal references</code>通用引用类型和<code>std::forward()</code>模板函数共同实现完美转发。例子如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;cstring&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">RunCode</span><span class="params">(<span class="keyword">int</span> &amp;&amp;m)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"rvalue ref"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">RunCode</span><span class="params">(<span class="keyword">int</span> &amp;m)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"lvalue ref"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">RunCode</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;&amp;m)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"const rvalue ref"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">RunCode</span><span class="params">(<span class="keyword">const</span> <span class="keyword">int</span> &amp;m)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">"const lvalue ref"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 这里利用了universal references，如果写T&amp;,就不支持传入右值，而写T&amp;&amp;，既能支持左值，又能支持右值</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">perfectForward</span><span class="params">(T &amp;&amp; t)</span> </span>&#123;</span><br><span class="line">    RunCode(forward&lt;T&gt; (t));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">notPerfectForward</span><span class="params">(T &amp;&amp; t)</span> </span>&#123;</span><br><span class="line">    RunCode(t);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> b = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> c = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">int</span> d = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    notPerfectForward(a); <span class="comment">// lvalue ref</span></span><br><span class="line">    notPerfectForward(move(b)); <span class="comment">// lvalue ref</span></span><br><span class="line">    notPerfectForward(c); <span class="comment">// const lvalue ref</span></span><br><span class="line">    notPerfectForward(move(d)); <span class="comment">// const lvalue ref</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    perfectForward(a); <span class="comment">// lvalue ref</span></span><br><span class="line">    perfectForward(move(b)); <span class="comment">// rvalue ref</span></span><br><span class="line">    perfectForward(c); <span class="comment">// const lvalue ref</span></span><br><span class="line">    perfectForward(move(d)); <span class="comment">// const rvalue ref</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>移动语义对<code>swap()</code>函数的影响也很大，之前实现swap可能需要三次内存拷贝，而有了移动语义后，就可以实现高性能的交换函数了。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">swap</span><span class="params">(T&amp; a, T&amp; b)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">T <span class="title">tmp</span><span class="params">(<span class="built_in">std</span>::move(a))</span></span>;</span><br><span class="line">    a = <span class="built_in">std</span>::move(b);</span><br><span class="line">    b = <span class="built_in">std</span>::move(tmp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果T是可移动的，那么整个操作会很高效，如果不可移动，那么就和普通的交换函数是一样的，不会发生什么错误，很安全。</p>
+<hr>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><ol>
+<li>由两种值类型，左值和右值</li>
+<li>有三种引用类型，左值引用、右值引用和通用引用。左值引用只能绑定左值，右值引用只能绑定右值，通用引用由初始化时绑定的值的类型确定</li>
+<li>左值和右值是独立于他们的类型的，右值引用可能是左值可能是右值，如果这个右值引用已经被命名了，他就是左值</li>
+<li>引用折叠规则：所有的右值引用叠加到右值引用上仍然是一个右值引用，其他引用折叠都为左值引用。当<code>T&amp;&amp;</code>为模板参数时，输入左值，它将变成左值引用，输入右值则变成具名的右值应用。</li>
+<li>移动语义可以减少无谓的内存拷贝，要想实现移动语义，需要实现移动构造函数和移动赋值函数</li>
+<li><code>std::move()</code>将一个左值转换成一个右值，强制使用移动拷贝和赋值函数，这个函数本身并没有对这个左值什么特殊操作</li>
+<li><code>std::forward()</code>和<code>universal references</code>通用引用共同实现完美转发。</li>
+<li>用<code>empalce_back()</code>替换<code>push_back()</code>增加性能</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C++</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/10/06/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/" rel="next" title="一致性哈希算法原理">
+                <i class="fa fa-chevron-left"></i> 一致性哈希算法原理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/10/06/%E7%9F%AD%E9%93%BE%E6%8E%A5%E8%AE%BE%E8%AE%A1/" rel="prev" title="短链接设计">
+                短链接设计 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/1.jfif"
+                alt="lwl" />
+            
+              <p class="site-author-name" itemprop="name">lwl</p>
+              <p class="site-description motion-element" itemprop="description">对未来的真正慷慨，是把一切都献给现在</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7Carchive">
+              
+                  <span class="site-state-item-count">25</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">22</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/yourname" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:yourname@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/yourname" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-twitter"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://instagram.com/yourname" target="_blank" title="Instagram">
+                      
+                        <i class="fa fa-fw fa-instagram"></i>Instagram</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#左值、右值"><span class="nav-number">1.</span> <span class="nav-text">左值、右值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#移动构造和移动赋值"><span class="nav-number">2.</span> <span class="nav-text">移动构造和移动赋值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#完美转发"><span class="nav-number">3.</span> <span class="nav-text">完美转发</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lwl</span>
+
+  
+</div>
+
+<!-- 
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+ -->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

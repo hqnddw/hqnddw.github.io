@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#fff">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/header.png?v=5.1.4" color="#fff">
+
+
+
+
+
+  <meta name="keywords" content="计算机网络," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="lwl的博客" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="为什么需要单点登录单点登录SSO（Single Sign On）说得简单点就是在一个多系统共存的环境下，用户在一处登录后，就不用在其他系统中登录，也就是用户的一次登录能得到其他所有系统的信任。 单点登录在大型网站里使用得非常频繁，例如，阿里旗下有淘宝、天猫、支付宝等网站，还有背后的成百上千的子系统，用户一次操作或交易可能涉及到几十个子系统的协作，如果每个子系统都需要用户认证，不仅用户会疯掉，各子系">
+<meta name="keywords" content="计算机网络">
+<meta property="og:type" content="article">
+<meta property="og:title" content="单点登录">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95&#x2F;index.html">
+<meta property="og:site_name" content="lwl的博客">
+<meta property="og:description" content="为什么需要单点登录单点登录SSO（Single Sign On）说得简单点就是在一个多系统共存的环境下，用户在一处登录后，就不用在其他系统中登录，也就是用户的一次登录能得到其他所有系统的信任。 单点登录在大型网站里使用得非常频繁，例如，阿里旗下有淘宝、天猫、支付宝等网站，还有背后的成百上千的子系统，用户一次操作或交易可能涉及到几十个子系统的协作，如果每个子系统都需要用户认证，不仅用户会疯掉，各子系">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95&#x2F;image-20201006195210043.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95&#x2F;image-20201006195250896.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95&#x2F;image-20201006195410484.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95&#x2F;797930-20161203152650974-276822362.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95&#x2F;797930-20161129155243068-1378377736.png">
+<meta property="og:updated_time" content="2020-10-06T11:56:32.222Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;06&#x2F;%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95&#x2F;image-20201006195210043.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/10/06/单点登录/"/>
+
+
+
+
+
+  <title>单点登录 | lwl的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lwl的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">To strive, to seek, to find, and not to yield</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/06/%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lwl">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/1.jfif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lwl的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">单点登录</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-10-06T19:46:24+08:00">
+                2020-10-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/design/" itemprop="url" rel="index">
+                    <span itemprop="name">design</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="为什么需要单点登录"><a href="#为什么需要单点登录" class="headerlink" title="为什么需要单点登录"></a><strong>为什么需要单点登录</strong></h3><p>单点登录SSO（Single Sign On）说得简单点就是在一个多系统共存的环境下，用户在一处登录后，就不用在其他系统中登录，也就是用户的一次登录能得到其他所有系统的信任。</p>
+<p>单点登录在大型网站里使用得非常频繁，例如，阿里旗下有淘宝、天猫、支付宝等网站，还有背后的成百上千的子系统，用户一次操作或交易可能涉及到几十个子系统的协作，如果每个子系统都需要用户认证，不仅用户会疯掉，各子系统也会为这种重复认证授权的逻辑搞疯掉。</p>
+<p>所以，单点登录要解决的就是，用户只需要登录一次就可以访问所有相互信任的应用系统。</p>
+<img src="/2020/10/06/%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95/image-20201006195210043.png" alt="image-20201006195210043" style="zoom:67%;">
+
+<p>如图所示，图中有4个系统，分别是Application1、Application2、Application3、和SSO。Application1、Application2、Application3没有登录模块，而SSO只有登录模块，没有其他的业务模块，当Application1、Application2、Application3需要登录时，将跳到SSO系统，SSO系统完成登录，其他的应用系统也就随之登录了。这完全符合我们对单点登录（SSO）的定义</p>
+<h3 id="技术实现"><a href="#技术实现" class="headerlink" title="技术实现"></a>技术实现</h3><p>在说单点登录（SSO）的技术实现之前，我们先说一说普通的登录认证机制</p>
+<img src="/2020/10/06/%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95/image-20201006195250896.png" alt="image-20201006195250896" style="zoom:67%;">
+
+<p>如上图所示，我们在浏览器（Browser）中访问一个应用，这个应用需要登录，我们填写完用户名和密码后，完成登录认证。这时，我们在这个用户的session中标记登录状态为yes（已登录），同时在浏览器（Browser）中写入Cookie，这个Cookie是这个用户的唯一标识。下次我们再访问这个应用的时候，请求中会带上这个Cookie，服务端会根据这个Cookie找到对应的session，通过session来判断这个用户是否登录。</p>
+<h3 id="同域下的单点登录"><a href="#同域下的单点登录" class="headerlink" title="同域下的单点登录"></a>同域下的单点登录</h3><p>一个企业一般情况下只有一个域名，通过二级域名区分不同的系统。比如我们有个域名叫做：a.com，同时有两个业务系统分别为：app1.a.com和app2.a.com。我们要做单点登录（SSO），需要一个登录系统，叫做：sso.a.com。</p>
+<p>我们只要在sso.a.com登录，app1.a.com和app2.a.com就也登录了。通过上面的登陆认证机制，我们可以知道，在sso.a.com中登录了，其实是在sso.a.com的服务端的session中记录了登录状态，同时在浏览器端（Browser）的sso.a.com下写入了Cookie。那么我们怎么才能让app1.a.com和app2.a.com登录呢？这里有两个问题：</p>
+<ul>
+<li>Cookie是不能跨域的，我们Cookie的domain属性是sso.a.com，在给app1.a.com和app2.a.com发送请求是带不上的。</li>
+<li>sso、app1和app2是不同的应用，它们的session存在自己的应用内，是不共享的</li>
+</ul>
+<img src="/2020/10/06/%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95/image-20201006195410484.png" alt="image-20201006195410484" style="zoom:67%;">
+
+<p>那么我们如何解决这两个问题呢？针对第一个问题，sso登录以后，可以将Cookie的域设置为顶域，即.a.com，这样所有子域的系统都可以访问到顶域的Cookie。<strong>我们在设置Cookie时，只能设置顶域和自己的域，不能设置其他的域。比如：我们不能在自己的系统中给baidu.com的域设置Cookie</strong></p>
+<p>Cookie的问题解决了，我们再来看看session的问题。我们在sso系统登录了，这时再访问app1，Cookie也带到了app1的服务端（Server），app1的服务端怎么找到这个Cookie对应的Session呢？这里就要把3个系统的Session共享，如图所示。</p>
+<p>同域下的单点登录就实现了，<strong>但这还不是真正的单点登录</strong></p>
+<h3 id="不同域下的单点登录"><a href="#不同域下的单点登录" class="headerlink" title="不同域下的单点登录"></a>不同域下的单点登录</h3><h4 id="登录"><a href="#登录" class="headerlink" title="登录"></a>登录</h4><p>相比于单系统登录，sso需要一个独立的认证中心，只有认证中心能接受用户的用户名密码等安全信息，其他系统不提供登录入口，只接受认证中心的间接授权。间接授权通过令牌实现，sso认证中心验证用户的用户名密码没问题，创建授权令牌，在接下来的跳转过程中，授权令牌作为参数发送给各个子系统，子系统拿到令牌，即得到了授权，可以借此创建局部会话，局部会话登录方式与单系统的登录方式相同。这个过程，也就是单点登录的原理，用下图说明</p>
+<p><img src="/2020/10/06/%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95/797930-20161203152650974-276822362.png" alt="img"></p>
+<p>下面对上图简要描述</p>
+<ol>
+<li>用户访问系统1的受保护资源，系统1发现用户未登录，跳转至sso认证中心，并将自己的地址作为参数</li>
+<li>sso认证中心发现用户未登录，将用户引导至登录页面</li>
+<li>用户输入用户名密码提交登录申请</li>
+<li>sso认证中心校验用户信息，创建用户与sso认证中心之间的会话，称为<strong>全局会话</strong>，同时创建<strong>授权令牌</strong></li>
+<li>sso认证中心带着令牌跳转会最初的请求地址（系统1）</li>
+<li>系统1拿到令牌，去sso认证中心校验令牌是否有效</li>
+<li>sso认证中心校验令牌，返回有效，注册系统1</li>
+<li>系统1使用该令牌创建与用户的会话，称为<strong>局部会话</strong>，返回受保护资源</li>
+<li>用户访问系统2的受保护资源</li>
+<li>系统2发现用户未登录，跳转至sso认证中心，并将自己的地址作为参数</li>
+<li>sso认证中心发现用户已登录，跳转回系统2的地址，并附上令牌</li>
+<li>系统2拿到令牌，去sso认证中心校验令牌是否有效</li>
+<li>sso认证中心校验令牌，返回有效，注册系统2</li>
+<li>系统2使用该令牌创建与用户的局部会话，返回受保护资源</li>
+</ol>
+<p>用户登录成功之后，会与sso认证中心及各个子系统建立会话，用户与sso认证中心建立的会话称为全局会话，用户与各个子系统建立的会话称为局部会话，局部会话建立之后，用户访问子系统受保护资源将不再通过sso认证中心，全局会话与局部会话有如下约束关系</p>
+<ol>
+<li>局部会话存在，全局会话一定存在</li>
+<li>全局会话存在，局部会话不一定存在</li>
+<li>全局会话销毁，局部会话必须销毁</li>
+</ol>
+<h4 id="注销"><a href="#注销" class="headerlink" title="注销"></a>注销</h4><p>单点登录自然也要单点注销，在一个子系统中注销，所有子系统的会话都将被销毁，用下面的图来说明</p>
+<p><img src="/2020/10/06/%E5%8D%95%E7%82%B9%E7%99%BB%E5%BD%95/797930-20161129155243068-1378377736.png" alt="3b139d2e-0b83-4a69-b4f2-316adb8997ce"></p>
+<p>sso认证中心一直监听全局会话的状态，一旦全局会话销毁，监听器将通知所有注册系统执行注销操作</p>
+<p>下面对上图简要说明</p>
+<ol>
+<li>用户向系统1发起注销请求</li>
+<li>系统1根据用户与系统1建立的会话id拿到令牌，向sso认证中心发起注销请求</li>
+<li>sso认证中心校验令牌有效，销毁全局会话，同时取出所有用此令牌注册的系统地址</li>
+<li>sso认证中心向所有注册系统发起注销请求</li>
+<li>各注册系统接收sso认证中心的注销请求，销毁局部会话</li>
+<li>sso认证中心引导用户至登录页面</li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag"># 计算机网络</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/10/06/HTTP1.1%E3%80%81HTTP2%E3%80%81HTTP3%E6%BC%94%E5%8F%98/" rel="next" title="HTTP1.1、HTTP2、HTTP3演变">
+                <i class="fa fa-chevron-left"></i> HTTP1.1、HTTP2、HTTP3演变
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/1.jfif"
+                alt="lwl" />
+            
+              <p class="site-author-name" itemprop="name">lwl</p>
+              <p class="site-description motion-element" itemprop="description">对未来的真正慷慨，是把一切都献给现在</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7Carchive">
+              
+                  <span class="site-state-item-count">25</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">12</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">22</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/yourname" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:yourname@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/yourname" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-twitter"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://instagram.com/yourname" target="_blank" title="Instagram">
+                      
+                        <i class="fa fa-fw fa-instagram"></i>Instagram</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#为什么需要单点登录"><span class="nav-number">1.</span> <span class="nav-text">为什么需要单点登录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#技术实现"><span class="nav-number">2.</span> <span class="nav-text">技术实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#同域下的单点登录"><span class="nav-number">3.</span> <span class="nav-text">同域下的单点登录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#不同域下的单点登录"><span class="nav-number">4.</span> <span class="nav-text">不同域下的单点登录</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#登录"><span class="nav-number">4.1.</span> <span class="nav-text">登录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#注销"><span class="nav-number">4.2.</span> <span class="nav-text">注销</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lwl</span>
+
+  
+</div>
+
+<!-- 
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+ -->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

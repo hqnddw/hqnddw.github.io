@@ -1,6 +1,260 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>单例模式</title>
+    <url>/2020/10/07/%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<h3 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h3><p>单例模式作为最常用的设计模式之一，保证一个类仅有一个实例，并提供一个访问它的全局访问点，该实例被所有程序模块共享。</p>
+<p>实现思路：私有化它的构造函数，以防止外界创建单例类的对象；使用类的私有静态指针变量指向类的唯一实例，并用一个公有的静态方法获取该实例。</p>
+<p>单例模式有两种实现方法，分别是懒汉和饿汉模式。顾名思义，懒汉模式，即非常懒，不用的时候不去初始化，所以在第一次被使用时才进行初始化；饿汉模式，即迫不及待，在程序运行时立即初始化。</p>
+<h3 id="经典的线程安全懒汉模式"><a href="#经典的线程安全懒汉模式" class="headerlink" title="经典的线程安全懒汉模式"></a><strong>经典的线程安全懒汉模式</strong></h3><p>单例模式的实现思路如前述所示，其中，经典的线程安全懒汉模式，<strong>使用双检测锁模式</strong>。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">single</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> single *p;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">std</span>::mutex <span class="keyword">mutex_t</span>;</span><br><span class="line"></span><br><span class="line">    single() &#123;&#125;</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> single *<span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (p == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">            <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; lock(<span class="keyword">mutex_t</span>);</span><br><span class="line">            <span class="keyword">if</span> (p == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">                p = <span class="keyword">new</span> single;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> p;</span><br><span class="line">    &#125;</span><br><span class="line">    ~single()&#123;</span><br><span class="line">        <span class="keyword">delete</span> p;</span><br><span class="line">        p = <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">single *single::p = <span class="literal">nullptr</span>;</span><br><span class="line"><span class="built_in">std</span>::mutex single::<span class="keyword">mutex_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    single *s1 = single::getInstance();</span><br><span class="line">    single *s2 = single::getInstance();</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; s1 &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; s2 &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>为什么要用双检测，只检测一次不行吗？</code></strong></p>
+<p>如果只检测一次，在每次调用获取实例的方法时，都需要加锁，这将严重影响程序性能。双层检测可以有效避免这种情况，仅在第一次创建单例的时候加锁，其他时候都不再符合NULL == p的情况，直接返回已创建好的实例。</p>
+<hr>
+<h3 id="局部静态变量之线程安全懒汉模式"><a href="#局部静态变量之线程安全懒汉模式" class="headerlink" title="局部静态变量之线程安全懒汉模式"></a><strong>局部静态变量之线程安全懒汉模式</strong></h3><p>前面的双检测锁模式，写起来不太优雅，《Effective C++》（Item 04）中的提出另一种更优雅的单例模式实现，使用函数内的局部静态对象，这种方法不用加锁和解锁操作。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">single</span>&#123;</span></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">     single()&#123;&#125;</span><br><span class="line">     ~single()&#123;&#125;</span><br><span class="line"> </span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">     <span class="function"><span class="keyword">static</span> single* <span class="title">getinstance</span><span class="params">()</span></span>;</span><br><span class="line"> </span><br><span class="line"> &#125;;</span><br><span class="line"></span><br><span class="line">single* single::getinstance()&#123;</span><br><span class="line">    <span class="keyword">static</span> single obj;</span><br><span class="line">    <span class="keyword">return</span> &amp;obj;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实，C++0X以后，要求编译器保证内部静态变量的线程安全性，故C++0x之后该实现是线程安全的，C++0x之前仍需加锁，其中C++0x是C++11标准成为正式标准之前的草案临时名字。</p>
+<hr>
+<h3 id="饿汉模式"><a href="#饿汉模式" class="headerlink" title="饿汉模式"></a><strong>饿汉模式</strong></h3><p>饿汉模式不需要用锁，就可以实现线程安全。原因在于，在程序运行时就定义了对象，并对其初始化。之后，不管哪个线程调用成员函数getinstance()，都只不过是返回一个对象的指针而已。所以是线程安全的，不需要在获取实例的成员函数中加锁。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">single</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> single *p;</span><br><span class="line">    single() &#123;&#125;</span><br><span class="line">    ~single() &#123;&#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> single *<span class="title">getinstance</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">single *single::p = <span class="keyword">new</span> single();</span><br><span class="line">single *single::getinstance() &#123;</span><br><span class="line">    <span class="keyword">return</span> p;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//测试方法</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    single *p1 = single::getinstance();</span><br><span class="line">    single *p2 = single::getinstance();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (p1 == p2)</span><br><span class="line">    	<span class="built_in">cout</span> &lt;&lt; <span class="string">"same"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">    system(<span class="string">"pause"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>饿汉模式虽好，但其存在隐藏的问题，在于非静态对象（函数外的static对象）在不同编译单元中的初始化顺序是未定义的。如果在初始化完成之前调用 getInstance() 方法会返回一个未定义的实例。</p>
+]]></content>
+      <categories>
+        <category>设计模式</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>设计模式</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>为什么MySQL会抖一下</title>
+    <url>/2020/10/07/%E4%B8%BA%E4%BB%80%E4%B9%88MySQL%E4%BC%9A%E6%8A%96%E4%B8%80%E4%B8%8B/</url>
+    <content><![CDATA[<p>平时的工作中，一条SQL语句，正常执行的时候特别快，但是有时也不知道怎么回事，它就会变得特别慢，并且这样的场景很难复现，它不只随机，而且持续时间还很短。看上去，这就像是数据库“抖”了一下</p>
+<p>InnoDB在处理更新语句的时候，只做了写日志这一个磁盘操作。这个日志叫作redo log（重做日志），在更新内存写完redo log后，就返回给客户端，本次更新成功。而InnoDB总要把内存里的数据写入磁盘，术语就是flush，即把内存中的脏页flush到磁盘上使之变成干净页。</p>
+<p>平时执行很快的更新操作，其实就是在写内存和日志，而MySQL偶尔“抖”一下的那个瞬间，可能就是在刷脏页（flush）</p>
+<p><strong>什么情况会引发数据库的flush过程？</strong></p>
+<p><strong>第一种场景是InnoDB的redo log写满了</strong>。这时候系统会停止所有更新操作，把checkpoint往前推进，redo log留出空间可以继续写</p>
+<img src="/2020/10/07/%E4%B8%BA%E4%BB%80%E4%B9%88MySQL%E4%BC%9A%E6%8A%96%E4%B8%80%E4%B8%8B/image-20200716150914770.png" alt="image-20200716150914770" style="zoom:40%;">
+
+<p><strong>第二种场景是系统内存不足</strong>。当需要新的内存页，而内存不够用的时候，就要淘汰一些数据页，空出内存给别的数据页使用。如果淘汰的是“脏页”，就要先将脏页写到磁盘。</p>
+<p><strong>第三种场景是MySQL认为系统“空闲”的时候</strong>。当然，MySQL“这家酒店”的生意好起来可是会很快就能把粉板记满的，所以“掌柜”要合理地安排时间，即使是“生意好”的时候，也要见缝插针地找时间，只要有机会就刷一点“脏页”</p>
+<p><strong>第四种场景是MySQL正常关闭的情况</strong>。这时候，MySQL会把内存的脏页都flush到磁盘上，这样下次MySQL启动的时候，就可以直接从磁盘上读数据，启动速度会很快。</p>
+<p>刷脏页虽然是常态，但是出现以下这两种情况，都是会明显影响性能的：</p>
+<ol>
+<li><p>一个查询要淘汰的脏页个数太多，会导致查询的响应时间明显变长；</p>
+</li>
+<li><p>日志写满，更新全部堵住，写性能跌为0，这种情况对敏感业务来说，是不能接受的。</p>
+<p><strong>InnoDB刷脏页速度策略</strong></p>
+</li>
+</ol>
+<p>InnoDB的刷盘速度就是要参考这两个因素：一个是脏页比例，一个是redo log写盘速度。</p>
+<p>F1计算方法：参数innodb_max_dirty_pages_pct是脏页比例上限，默认值是75%。InnoDB会根据当前的脏页比例（假设为M），算出一个范围在0到100之间的数字</p>
+<p>F2计算方法：InnoDB每次写入的日志都有一个序号，当前写入的序号跟checkpoint对应的序号之间的差值，我们假设为N。InnoDB会根据这个N算出一个范围在0到100之间的数字</p>
+<img src="/2020/10/07/%E4%B8%BA%E4%BB%80%E4%B9%88MySQL%E4%BC%9A%E6%8A%96%E4%B8%80%E4%B8%8B/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716151702090.png" alt="image-20200716151702090" style="zoom:40%;">
+
+<p>一旦一个查询请求需要在执行过程中先flush掉一个脏页时，这个查询就可能要比平时慢了。而MySQL中的一个机制，可能让你的查询会更慢：在准备刷一个脏页的时候，如果这个数据页旁边的数据页刚好是脏页，就会把这个“邻居”也带着一起刷掉；而且这个把“邻居”拖下水的逻辑还可以继续蔓延，也就是对于每个邻居数据页，如果跟它相邻的数据页也还是脏页的话，也会被放到一起刷。</p>
+<p>在InnoDB中，innodb_flush_neighbors 参数就是用来控制这个行为的，值为1的时候会有上述的“连坐”机制，值为0时表示不找邻居，自己刷自己的。</p>
+<p>在MySQL 8.0中，innodb_flush_neighbors参数的默认值已经是0了。</p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>数据库</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>order by是怎么工作的</title>
+    <url>/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/</url>
+    <content><![CDATA[<p>假设你要查询城市是“杭州”的所有人名字，并且按照<strong>姓名排序</strong>返回前1000个人的姓名、年龄。</p>
+<p>假设这个表的部分定义是这样的：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`t`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`city`</span> <span class="built_in">varchar</span>(<span class="number">16</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`name`</span> <span class="built_in">varchar</span>(<span class="number">16</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`age`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`addr`</span> <span class="built_in">varchar</span>(<span class="number">128</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`city`</span> (<span class="string">`city`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这时，你的SQL语句可以这么写：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> city,<span class="keyword">name</span>,age <span class="keyword">from</span> t <span class="keyword">where</span> city=<span class="string">'杭州'</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="keyword">name</span> <span class="keyword">limit</span> <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
+
+<p>下面讲解这个语句的执行流程。</p>
+<p><strong>全字段排序</strong></p>
+<p>为避免全表扫描，我们需要在city字段加上索引</p>
+<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716172934243.png" alt="image-20200716172934243" style="zoom:40%;">
+
+<p>从图中可以看到，满足city=’杭州’条件的行，是从ID_X到ID_(X+N)的这些记录。</p>
+<p>通常情况下，这个语句执行流程如下所示 ：</p>
+<ol>
+<li>初始化<strong>sort_buffer</strong>，确定放入name、city、age这三个字段；</li>
+<li>从索引city找到第一个满足city=’杭州’条件的主键id，也就是图中的ID_X；</li>
+<li>到主键id索引取出整行，取name、city、age三个字段的值，存入sort_buffer中；</li>
+<li>从索引city取下一个记录的主键id；</li>
+<li>重复步骤3、4直到city的值不满足查询条件为止，对应的主键id也就是图中的ID_Y；</li>
+<li>对sort_buffer中的数据按照字段name做快速排序；</li>
+<li>按照排序结果取前1000行返回给客户端。</li>
+</ol>
+<p>我们暂且把这个排序过程，称为全字段排序，执行流程的示意图如下所示</p>
+<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716173046109.png" alt="image-20200716173046109" style="zoom: 45%;">
+
+<p>图中“按name排序”这个动作，可能在内存中完成，也可能需要使用外部排序，这取决于排序所需的内存和参数sort_buffer_size。</p>
+<p>sort_buffer_size，就是MySQL为排序开辟的内存（sort_buffer）的大小。如果要排序的数据量小于sort_buffer_size，排序就在内存中完成。但如果排序数据量太大，内存放不下，则不得不利用磁盘临时文件辅助排序。</p>
+<p><strong>rowid排序</strong></p>
+<p>在上面这个算法过程里面，只对原表的数据读了一遍，剩下的操作都是在sort_buffer和临时文件中执行的。但这个算法有一个问题，就是如果查询要返回的字段很多的话，那么sort_buffer里面要放的字段数太多，这样内存里能够同时放下的行数很少，要分成很多个临时文件，排序的性能会很差。</p>
+<p>max_length_for_sort_data，是MySQL中专门控制用于排序的行数据的长度的一个参数。它的意思是，如果单行的长度超过这个值，MySQL就认为单行太大，要换一个算法</p>
+<p>新的算法放入sort_buffer的字段，只有要<strong>排序的列（即name字段</strong>）和<strong>主键id</strong>。</p>
+<p>但这时，排序的结果就因为少了city和age字段的值，不能直接返回了，整个执行流程就变成如下所示的样子：</p>
+<ol>
+<li>初始化sort_buffer，确定放入两个字段，即name和id；</li>
+<li>从索引city找到第一个满足city=’杭州’条件的主键id，也就是图中的ID_X；</li>
+<li>到主键id索引取出整行，取name、id这两个字段，存入sort_buffer中；</li>
+<li>从索引city取下一个记录的主键id；</li>
+<li>重复步骤3、4直到不满足city=’杭州’条件为止，也就是图中的ID_Y；</li>
+<li>对sort_buffer中的数据按照字段name进行排序；</li>
+<li>遍历排序结果，取前1000行，并按照id的值回到原表中取出city、name和age三个字段返回给客户端。</li>
+</ol>
+<p>这个执行流程的示意图如下，我把它称为rowid排序。</p>
+<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716173352103.png" alt="image-20200716173352103" style="zoom:45%;">
+
+<p>rowid排序多访问了一次表t的主键索引，就是步骤7。需要说明的是，最后的“结果集”是一个逻辑概念，实际上MySQL服务端从排序后的sort_buffer中依次取出id，然后到原表查到city、name和age这三个字段的结果，不需要在服务端再耗费内存存储结果，是直接返回给客户端的。</p>
+<p><strong>全字段排序 VS rowid排序</strong></p>
+<p>如果MySQL实在是担心排序内存太小，会影响排序效率，才会采用rowid排序算法，这样排序过程中一次可以排序更多行，但是需要再回到原表去取数据。</p>
+<p>如果MySQL认为内存足够大，会优先选择全字段排序，把需要的字段都放到sort_buffer中，这样排序后就会直接从内存里面返回查询结果了，不用再回到原表去取数据。</p>
+<p>这也就体现了MySQL的一个设计思想：<strong>如果内存够，就要多利用内存，尽量减少磁盘访问。</strong></p>
+<p>对于InnoDB表来说，rowid排序会要求回表多造成磁盘读，因此不会被优先选择。</p>
+<p><strong>其实，并不是所有的order by语句，都需要排序操作的。</strong>你可以设想下，如果能够保证从city这个索引上取出来的行，天然就是按照name递增排序的话，是不是就可以不用再排序了呢？</p>
+<p>所以，我们可以在这个市民表上创建一个city和name的联合索引，对应的SQL语句是</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t <span class="keyword">add</span> <span class="keyword">index</span> city_user(city, <span class="keyword">name</span>);</span><br></pre></td></tr></table></figure>
+
+<p>作为与city索引的对比，我们来看看这个索引的示意图。</p>
+<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716173702334.png" alt="image-20200716173702334" style="zoom:45%;">
+
+<p>这样整个查询过程的流程就变成了：</p>
+<ol>
+<li>从索引(city,name)找到第一个满足city=’杭州’条件的主键id；</li>
+<li>到主键id索引取出整行，取name、city、age三个字段的值，作为结果集的一部分直接返回；</li>
+<li>从索引(city,name)取下一个记录主键id；</li>
+<li>重复步骤2、3，直到查到第1000条记录，或者是不满足city=’杭州’条件时循环结束</li>
+</ol>
+<p><strong>这个语句的执行流程有没有可能进一步简化呢？</strong></p>
+<p><strong>覆盖索引是指，索引上的信息足够满足查询请求，不需要再回到主键索引上去取数据。</strong>按照覆盖索引的概念，我们可以再优化一下这个查询语句的执行流程。</p>
+<p>针对这个查询，我们可以创建一个city、name和age的联合索引，对应的SQL语句就是：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t <span class="keyword">add</span> <span class="keyword">index</span> city_user_age(city, <span class="keyword">name</span>, age);</span><br></pre></td></tr></table></figure>
+
+<p>这时，对于city字段的值相同的行来说，还是按照name字段的值递增排序的，此时的查询语句也就不再需要排序了。这样整个查询语句的执行流程就变成了：</p>
+<ol>
+<li>从索引(city,name,age)找到第一个满足city=’杭州’条件的记录，取出其中的city、name和age这三个字段的值，作为结果集的一部分直接返回；</li>
+<li>从索引(city,name,age)取下一个记录，同样取出这三个字段的值，作为结果集的一部分直接返回；</li>
+<li>重复执行步骤2，直到查到第1000条记录，或者是不满足city=’杭州’条件时循环结束。</li>
+</ol>
+<hr>
+<ol>
+<li>无条件查询如果只有order by create_time,<strong>即便create_time上有索引,也不会使用到。</strong><br>因为优化器认为走二级索引再去回表成本比全表扫描排序更高。所以选择走全表扫描,</li>
+<li>无条件查询但是是order by create_time limit m.<strong>如果m值较小,是可以走索引的.</strong><br>因为优化器认为根据索引有序性去回表查数据，然后得到m条数据,就可以终止循环，那么成本比全表扫描小，则选择走二级索引。即便没有二级索引，<strong>mysql针对order by limit也做了优化，采用堆排序</strong></li>
+<li>如果是group by a，a上不能使用索引的情况，是走rowid排序。</li>
+<li>如果是group by limit，不能使用索引的情况，是走堆排序</li>
+<li>select * from t group by a –走的是索引全扫描</li>
+<li>select a from t group by a –走的是索引松散扫描，也就说只需要扫描每组的第一行数据即可，不用扫描每一行的值</li>
+</ol>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>数据库</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>count()的实现方式</title>
+    <url>/2020/10/07/count()%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<p>在不同的MySQL引擎中，count(*)有不同的实现方式：</p>
+<ul>
+<li>MyISAM引擎把一个表的总行数存在了磁盘上，因此执行count(*)的时候会直接返回这个数，效率很高；</li>
+<li>而InnoDB引擎就麻烦了，它执行count(*)的时候，需要把数据一行一行地从引擎里面读出来，然后累积计数。</li>
+</ul>
+<p><strong>为什么InnoDB不跟MyISAM一样，也把数字存起来呢？</strong></p>
+<p>因为即使是在同一个时刻的多个查询，由于多版本并发控制（MVCC）的原因，InnoDB表“应该返回多少行”也是不确定的。</p>
+<img src="/2020/10/07/count()%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/image-20200716155204142.png" alt="image-20200716155204142" style="zoom:45%;">
+
+<p>MySQL在执行count(<em>)操作的时候还是做了优化的，它会找到最小的那棵索引树来遍历。*</em>在保证逻辑正确的前提下，尽量减少扫描的数据量，是数据库系统设计的通用法则之一**</p>
+<p><strong>show table status</strong> 命令的话，就会发现这个命令的输出结果里面也有一个TABLE_ROWS用于显示这个表当前有多少行，这个命令执行挺快的，那这个<strong>TABLE_ROWS</strong>能代替count(*)吗？</p>
+<p>实际上，TABLE_ROWS就是从这个采样估算得来的，因此它也很不准。有多不准呢，官方文档说误差可能达到40%到50%。<strong>所以，show table status命令显示的行数也不能直接使用。</strong></p>
+<p><strong>总结：</strong></p>
+<ul>
+<li>MyISAM表虽然count(*)很快，但是不支持事务；</li>
+<li>show table status命令虽然返回很快，但是不准确；</li>
+<li>InnoDB表直接count(*)会遍历全表，虽然结果准确，但会导致性能问题。</li>
+</ul>
+<hr>
+<p><strong>如果你现在有一个页面经常要显示交易系统的操作记录总数，到底应该怎么办呢？</strong></p>
+<p>答案是，我们只能自己计数。</p>
+<ol>
+<li><p><strong>用缓存系统保存计数</strong>，你可以用一个Redis服务来保存这个表的总行数。这个表每被插入一行Redis计数就加1，每被删除一行Redis计数就减1。</p>
+<p><strong>存在的问题</strong>：</p>
+<ul>
+<li><p>缓存系统可能会丢失更新。试想如果刚刚在数据表中插入了一行，Redis中保存的值也加了1，然后Redis异常重启了，重启后你要从存储redis数据的地方把这个值读回来，而刚刚加1的这个计数操作却丢失了。当然了，这还是有解的。比如，Redis异常重启以后，到数据库里面单独执行一次count(*)获取真实的行数，再把这个值写回到Redis里就可以了。</p>
+</li>
+<li><p>计数不精确的问题。我们是这么定义不精确的：</p>
+<ol>
+<li>一种是，查到的100行结果里面有最新插入记录，而Redis的计数里还没加1；</li>
+<li>另一种是，查到的100行结果里没有最新插入的记录，而Redis的计数里已经加了1。</li>
+</ol>
+<img src="/2020/10/07/count()%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/image-20200716160337166.png" alt="image-20200716160337166" style="zoom:45%;">
+</li>
+</ul>
+</li>
+<li><p><strong>在数据库保存计数</strong></p>
+</li>
+</ol>
+<p><strong>我们可以把这个计数直接放到数据库里单独的一张计数表C中</strong>，这解决了崩溃丢失的问题，InnoDB是支持崩溃恢复不丢数据的。</p>
+<p>同时我们可以利用“事务”这个特性，解决掉计数不精确的问题</p>
+<img src="/2020/10/07/count()%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/image-20200716160658533.png" alt="image-20200716160658533" style="zoom:40%;">
+
+<p>我们来看下现在的执行结果。虽然会话B的读操作仍然是在T3执行的，但是因为这时候更新事务还没有提交，所以计数值加1这个操作对会话B还不可见。</p>
+<p>因此，会话B看到的结果里， 查计数值和“最近100条记录”看到的结果，逻辑上就是一致的。</p>
+]]></content>
+      <categories>
+        <category>数据库</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>数据库</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>fork, vfork, 写时复制</title>
+    <url>/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/</url>
+    <content><![CDATA[<h3 id="fork"><a href="#fork" class="headerlink" title="fork"></a>fork</h3><p>fork调用一次，返回两次，子进程的返回值为0，父进程的返回值为子进程的pid</p>
+<p>子进程是父进程的副本。子进程获得父进程<strong>数据空间、堆和栈</strong>的<strong>副本</strong>。注意，这是子进程所拥有的的副本，父进程和子进程并不共享这些存储空间部分。父进程和子进程<strong>共享正文段</strong>。（fork也会复制父进程缓冲区的数据到子进程的缓冲区。父进程和子进程每个相同的打开文件描述符共享同一文件表项，父进程和子进程也共享同一文件的偏移量）</p>
+<img src="/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013407086.png" alt="image-20200728013407086" style="zoom:45%;">
+
+<p><strong>fork出错的原因：</strong></p>
+<ul>
+<li>当前的进程数已经达到了系统规定的上限，这时errno的值被设置为EAGAIN。</li>
+<li>系统内存不足，这时errno的值被设置为ENOMEM。</li>
+</ul>
+<h3 id="写时复制"><a href="#写时复制" class="headerlink" title="写时复制"></a>写时复制</h3><p>内核只为新生成的子进程创建虚拟空间结构，它们来复制于父进程的虚拟空间结构，但是不为这些段分配物理内存，它们共享父进程的物理空间，当父子进程中有更改相应段的行为发生时，再为子进程相应的段分配物理空间</p>
+<img src="/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013607556.png" alt="image-20200728013607556" style="zoom:45%;">
+
+<h3 id="vfork"><a href="#vfork" class="headerlink" title="vfork()"></a><strong>vfork()</strong></h3><p>内核连子进程的虚拟地址空间结构也不创建了，直接共享了父进程的虚拟空间，当然了，这种做法就顺水推舟的共享了父进程的物理空间</p>
+<img src="/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013657849.png" alt="image-20200728013657849" style="zoom:45%;">
+
+<p>fork和vfork的区别：</p>
+<ul>
+<li>fork ()：子进程拷贝父进程的数据段，代码段 ；vfork ()：子进程与父进程共享数据段 </li>
+<li>fork ()：父子进程的执行次序不确定；vfork 保证子进程先运行，在它调用exec或exit 之后父进程才可能被调度运行。 如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则会导致死锁。 </li>
+</ul>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>fork</tag>
+        <tag>操作系统</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis过期键删除策略</title>
     <url>/2020/10/06/%E8%BF%87%E6%9C%9F%E9%94%AE%E5%88%A0%E9%99%A4%E7%AD%96%E7%95%A5/</url>
     <content><![CDATA[<h3 id="过期键的删除策略"><a href="#过期键的删除策略" class="headerlink" title="过期键的删除策略"></a>过期键的删除策略</h3><ol>
@@ -1766,6 +2020,110 @@
       </categories>
       <tags>
         <tag>C</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title> 进程间通信有哪些方式</title>
+    <url>/2019/10/11/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E6%9C%89%E5%93%AA%E4%BA%9B%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<h3 id="管道"><a href="#管道" class="headerlink" title="管道"></a><strong>管道</strong></h3><ul>
+<li>管道是半双工的，数据只能向一个方向流动；需要双方通信时，需要建立起两个管道；</li>
+<li>一个进程向管道中写的内容被管道另一端的进程读出。写入的内容每次都添加在管道缓冲区的末尾，并且每次都是从缓冲区的头部读出数据；</li>
+<li>只能用于父子进程或者兄弟进程之间(具有亲缘关系的进程)</li>
+</ul>
+<p><strong>管道的实质：</strong></p>
+<ul>
+<li>管道的实质是一个内核缓冲区，管道一端的进程顺序的将数据写入缓冲区，另一端的进程以先进先出的方式读出数据。</li>
+<li>该缓冲区可以看做是一个循环队列，读和写的位置都是自动增长的，不能随意改变，一个数据只能被读一次，读出来以后在缓冲区就不复存在了。</li>
+<li>当缓冲区读空或者写满时，有一定的规则控制相应的读进程或者写进程进入等待队列，当空的缓冲区有新数据写入或者满的缓冲区有数据读出来时，就唤醒等待队列中的进程继续读写。</li>
+<li>在 shell 里面执行 <code>A | B</code>命令的时候，A 进程和 B 进程都是 shell 创建出来的子进程，A 和 B 之间不存在父子关系，它俩的父进程都是 shell。</li>
+</ul>
+<p><strong>管道的局限：</strong><br>管道的主要局限性正体现在它的特点上：</p>
+<ul>
+<li>只支持单向数据流；</li>
+<li>只能用于具有亲缘关系的进程之间；</li>
+<li>没有名字；</li>
+<li>管道的缓冲区是有限的（管道存在于内存中，在管道创建时，为缓冲区分配一个页面大小）；</li>
+<li>对匿名管道及有名管道的读总是从开始处返回数据，对它们的写则把数据添加到末尾。<strong>它们不支持诸如lseek()等文件定位操作</strong>。</li>
+<li>管道所传送的是无格式字节流，这就要求管道的读出方和写入方必须事先约定好数据的格式，比如多少字节算作一个消息（或命令、或记录）等等；</li>
+</ul>
+<p>两个分别用于读写的描述符必须同时打开才行，否则会出问题。、</p>
+<ol>
+<li>如果关闭读 (close(pipefd[0])) 端保留写端，继续向写端 (pipefd[1]) 端写数据(write 函数)的进程会收到 SIGPIPE 信号。</li>
+<li>如果关闭写 (close(pipefd[1])) 端保留读端，继续向读端 (pipefd[0]) 端读数据(read 函数)，read 函数会返回 0.</li>
+</ol>
+<h3 id="命名管道"><a href="#命名管道" class="headerlink" title="命名管道"></a><strong>命名管道</strong></h3><p>有名管道不同于匿名管道之处在于它提供了一个路径名与之关联，<strong>以有名管道的文件形式存在于文件系统中</strong>，这样，<strong>即使与有名管道的创建进程不存在亲缘关系的进程，只要可以访问该路径，就能够彼此通过有名管道相互通信</strong>，因此，通过有名管道不相关的进程也能交换数据。有名管道严格遵循<strong>先进先出(first in first out)</strong>，对匿名管道及有名管道的读总是从开始处返回数据，对它们的写则把数据添加到末尾。<strong>它们不支持诸如lseek()等文件定位操作</strong>。<strong>有名管道的名字存在于文件系统中，内容存放在内存中</strong></p>
+<h3 id="消息队列"><a href="#消息队列" class="headerlink" title="消息队列"></a><strong>消息队列</strong></h3><ul>
+<li><p>消息队列是存放在<strong>内核中的消息链表</strong>，每个消息队列由消息队列标识符表示。</p>
+</li>
+<li><p>与管道（无名管道：只存在于内存中的文件；命名管道：存在于实际的磁盘介质或者文件系统）不同的是消息队列存放在内核中，只有在内核重启(即，操作系统重启)或者显示地删除一个消息队列时，该消息队列才会被真正的删除。</p>
+</li>
+<li><p>另外与管道不同的是，消息队列在某个进程往一个队列写入消息之前，并不需要另外某个进程在该队列上等待消息的到达</p>
+<blockquote>
+<p><strong>消息队列特点总结：</strong><br>（1）消息队列是消息的链表,具有特定的格式,存放在内存中并由消息队列标识符标识.<br>（2）消息队列允许一个或多个进程向它写入与读取消息.<br>（3）管道和消息队列的通信数据都是先进先出的原则。<br>（4）<strong>消息队列可以实现消息的随机查询</strong>,消息不一定要以先进先出的次序读取,也可以按消息的类型读取.比FIFO更有优势。<br>（5）消息队列克服了信号承载信息量少，管道只能承载无格式字节流以及缓冲区大小受限等缺点。<br>（6）目前主要有两种类型的消息队列：POSIX消息队列以及System V消息队列，系统V消息队列目前被大量使用。System V消息队列是随内核持续的，只有在内核重起或者人工删除时，该消息队列才会被删除。</p>
+<p>（7）<strong>消息队列不适合比较大数据的传输，消息队列通信过程中，存在用户态与内核态之间的数据拷贝开销</strong></p>
+</blockquote>
+</li>
+</ul>
+<h3 id="信号-Signal"><a href="#信号-Signal" class="headerlink" title="信号(Signal)"></a><strong>信号(Signal)</strong></h3><ul>
+<li>信号是进程间通信机制中<strong>唯一的异步通信机制</strong>，信号可以在任何时候发给某一进程，而无需知道该进程的状态。</li>
+<li>如果该进程当前并未处于执行状态，则该信号就由内核保存起来，直到该进程恢复执行并传递给它为止。</li>
+<li>如果一个信号被进程设置为阻塞，则该信号的传递被延迟，直到其阻塞被取消时才被传递给进程。</li>
+</ul>
+<blockquote>
+<p><strong>Linux系统中常用信号：</strong><br>（1）<strong>SIGHUP：</strong>用户从终端注销，所有已启动进程都将收到该信号。系统缺省状态下对该信号的处理是终止进程。<br>（2）<strong>SIGINT：</strong>程序终止信号。程序运行过程中，按<code>Ctrl+C</code>键将产生该信号。<br>（3）<strong>SIGQUIT：</strong>程序退出信号。程序运行过程中，按<code>Ctrl+\\</code>键将产生该信号。<br>（4）<strong>SIGBUS和SIGSEGV：</strong>进程访问非法地址。<br>（5）<strong>SIGFPE：</strong>运算中出现致命错误，如除零操作、数据溢出等。<br>（6）<strong>SIGKILL：</strong>用户终止进程执行信号。shell下执行<code>kill -9</code>发送该信号。<br>（7）<strong>SIGTERM：</strong>结束进程信号。shell下执行<code>kill 进程pid</code>发送该信号。<br>（8）<strong>SIGALRM：</strong>定时器信号。<br>（9）<strong>SIGCLD：</strong>子进程退出信号。如果其父进程没有忽略该信号也没有处理该信号，则子进程退出后将形成僵尸进程。</p>
+</blockquote>
+<p><strong>信号生命周期和处理流程</strong><br> （1）信号被某个进程产生，并设置此信号传递的对象（一般为对应进程的pid），然后传递给操作系统；<br> （2）操作系统根据接收进程的设置（是否阻塞）而选择性的发送给接收者，如果接收者阻塞该信号（且该信号是可以阻塞的），操作系统将暂时保留该信号，而不传递，直到该进程解除了对此信号的阻塞（如果对应进程已经退出，则丢弃此信号），如果对应进程没有阻塞，操作系统将传递此信号。<br> （3）目的进程接收到此信号后，将根据当前进程对此信号设置的预处理方式，暂时终止当前代码的执行，保护上下文（主要包括临时寄存器数据，当前程序位置以及当前CPU的状态）、转而执行中断服务程序，执行完成后在回复到中断的位置。当然，对于抢占式内核，在中断返回时还将引发新的调度。</p>
+<h3 id="共享内存"><a href="#共享内存" class="headerlink" title="共享内存"></a><strong>共享内存</strong></h3><p><strong>共享内存的机制，就是多两个进程都拿出一块虚拟地址空间来，映射到相同的物理内存中</strong>。这样这个进程写入的东西，另外一个进程马上就能看到了，都不需要拷贝来拷贝去，传来传去，大大提高了进程间通信的速度。</p>
+<img src="/2019/10/11/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E6%9C%89%E5%93%AA%E4%BA%9B%E6%96%B9%E5%BC%8F/Users/hqnddw/Desktop/md文件/操作系统.assets/image-20200805144151828.png" alt="image-20200805144151828" style="zoom:55%;">
+
+<ul>
+<li>使得多个进程可以访问同一块内存空间，是最快的可用IPC形式。是针对其他通信机制运行效率较低而设计的。</li>
+<li>为了在多个进程间交换信息，内核专门留出了一块内存区，可以由需要访问的进程将其映射到自己的私有地址空间。进程就可以直接读写这一块内存而不需要进行数据的拷贝，从而大大提高效率。</li>
+<li>由于多个进程共享一段内存，因此需要依靠某种同步机制（如信号量）来达到进程间的同步及互斥。</li>
+</ul>
+<h3 id="信号量-Semaphore"><a href="#信号量-Semaphore" class="headerlink" title="信号量(Semaphore)"></a><strong>信号量(Semaphore)</strong></h3><p>用了共享内存通信方式，带来新的问题，那就是如果多个进程同时修改同一个共享内存，很有可能就冲突了。为了防止多进程竞争共享资源，而造成的数据错乱，所以需要保护机制，使得共享的资源，在任意时刻只能被一个进程访问。正好，<strong>信号量</strong>就实现了这一保护机制。</p>
+<p>信号量是一个计数器，用于多进程对共享数据的访问，信号量的意图在于进程间同步。为了获得共享资源，进程需要执行下列操作：</p>
+<p>信号量表示资源的数量，控制信号量的方式有两种原子操作：</p>
+<ul>
+<li>一个是 <strong>P 操作</strong>，这个操作会把信号量减去 -1，相减后如果信号量 &lt; 0，则表明资源已被占用，进程需阻塞等待；相减后如果信号量 &gt;= 0，则表明还有资源可使用，进程可正常继续执行。</li>
+<li>另一个是 <strong>V 操作</strong>，这个操作会把信号量加上 1，相加后如果信号量 &lt;= 0，则表明当前有阻塞中的进程，于是会将该进程唤醒运行；相加后如果信号量 &gt; 0，则表明当前没有阻塞中的进程；</li>
+</ul>
+<p>P 操作是用在进入共享资源之前，V 操作是用在离开共享资源之后，这两个操作是必须成对出现的。</p>
+<blockquote>
+<p><strong>信号量与普通整型变量的区别：</strong></p>
+<p>（1）信号量是非负整型变量，除了初始化之外，它只能通过两个标准原子操作：wait(semap) , signal(semap) ; 来进行访问；<br>（2）操作也被成为PV原语（P来源于荷兰语proberen”测试”，V来源于荷兰语verhogen”增加”，P表示通过的意思，V表示释放的意思），而普通整型变量则可以在任何语句块中被访问；</p>
+</blockquote>
+<blockquote>
+<p><strong>信号量与互斥量之间的区别：</strong><br>（1）互斥量用于线程的互斥，信号量用于线程的同步。这是互斥量和信号量的根本区别，也就是互斥和同步之间的区别。<br><strong>互斥：</strong>是指某一资源同时只允许一个访问者对其进行访问，具有唯一性和排它性。但互斥无法限制访问者对资源的访问顺序，即访问是无序的。<br><strong>同步：</strong>是指在互斥的基础上（大多数情况），通过其它机制实现访问者对资源的有序访问。在大多数情况下，同步已经实现了互斥，特别是所有写入资源的情况必定是互斥的。少数情况是指可以允许多个访问者同时访问资源<br>（2）互斥量值只能为0/1，信号量值可以为非负整数。<br>也就是说，一个互斥量只能用于一个资源的互斥访问，它不能实现多个资源的多线程互斥问题。信号量可以实现多个同类资源的多线程互斥和同步。当信号量为单值信号量是，也可以完成一个资源的互斥访问。<br>（3）互斥量的加锁和解锁必须由同一线程分别对应使用，信号量可以由一个线程释放，另一个线程得到。</p>
+</blockquote>
+<h3 id="套接字-Socket"><a href="#套接字-Socket" class="headerlink" title="套接字(Socket)"></a><strong>套接字(Socket)</strong></h3><p>前面提到的管道、消息队列、共享内存、信号量和信号都是在同一台主机上进行进程间通信，那要想<strong>跨网络与不同主机上的进程之间通信，就需要 Socket 通信了</strong></p>
+<p>创建 socket 的系统调用：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">socket</span><span class="params">(<span class="keyword">int</span> domain, <span class="keyword">int</span> type, <span class="keyword">int</span> protocal)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>三个参数分别代表：</p>
+<ul>
+<li>domain 参数用来指定协议族，比如 AF_INET 用于 IPV4、AF_INET6 用于 IPV6、AF_LOCAL/AF_UNIX 用于本机；</li>
+<li>type 参数用来指定通信特性，比如 SOCK_STREAM 表示的是字节流，对应 TCP、SOCK_DGRAM  表示的是数据报，对应 UDP、SOCK_RAW 表示的是原始套接字；</li>
+<li>protocal 参数原本是用来指定通信协议的，但现在基本废弃。因为协议已经通过前面两个参数指定完成，protocol 目前一般写成 0 即可;</li>
+</ul>
+<img src="/2019/10/11/%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E6%9C%89%E5%93%AA%E4%BA%9B%E6%96%B9%E5%BC%8F/Users/hqnddw/Desktop/md文件/操作系统.assets/image-20200805145828593.png" alt="image-20200805145828593" style="zoom:50%;">
+
+<ul>
+<li>服务端和客户端初始化 <code>socket</code>，得到文件描述符；</li>
+<li>服务端调用 <code>bind</code>，将绑定在 IP 地址和端口;</li>
+<li>服务端调用 <code>listen</code>，进行监听；</li>
+<li>服务端调用 <code>accept</code>，等待客户端连接；</li>
+<li>客户端调用 <code>connect</code>，向服务器端的地址和端口发起连接请求；</li>
+<li>服务端 <code>accept</code> 返回用于传输的 <code>socket</code> 的文件描述符；</li>
+<li>客户端调用 <code>write</code> 写入数据；服务端调用 <code>read</code> 读取数据；</li>
+<li>客户端断开连接时，会调用 <code>close</code>，那么服务端 <code>read</code> 读取数据的时候，就会读取到了 <code>EOF</code>，待处理完数据后，服务端调用 <code>close</code>，表示连接关闭。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
       </tags>
   </entry>
   <entry>

@@ -85,15 +85,15 @@
 <meta name="keywords" content="数据结构与算法,链表">
 <meta property="og:type" content="article">
 <meta property="og:title" content="链表之快慢指针">
-<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;index.html">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;08&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;index.html">
 <meta property="og:site_name" content="lwl的博客">
 <meta property="og:description" content="链表的快慢指针指声明两个指针slow和fast，slow每次走一步，fast每次走两步 几种应用到快慢指针的场景： 寻找链表的中点 123456ListNode *p1 = head, *p2 = head-&amp;gt;next;while (p2 &amp;amp;&amp;amp; p2-&amp;gt;next) &amp;#123;      p1 = p1-&amp;gt;next;      p2 = p2-&amp;gt;next-&amp;">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;微信图片_20190829113352.jpg">
-<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;image-20201005200439527.png">
-<meta property="og:updated_time" content="2020-10-05T12:10:16.273Z">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;08&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;微信图片_20190829113352.jpg">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;08&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;image-20201005200439527.png">
+<meta property="og:updated_time" content="2020-10-12T01:29:42.527Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;微信图片_20190829113352.jpg">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;08&#x2F;05&#x2F;%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88&#x2F;微信图片_20190829113352.jpg">
 
 
 
@@ -123,7 +123,7 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2020/10/05/链表之快慢指针/"/>
+  <link rel="canonical" href="http://yoursite.com/2020/08/05/链表之快慢指针/"/>
 
 
 
@@ -256,7 +256,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lwl">
@@ -285,8 +285,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-10-05T19:41:51+08:00">
-                2020-10-05
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-08-05T19:41:51+08:00">
+                2020-08-05
               </time>
             
 
@@ -357,7 +357,7 @@
 <p><strong>检测链表中是否有环并找到环开始的节点</strong></p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">        ListNode *slow = head;</span><br><span class="line">        ListNode *fast = head;</span><br><span class="line">        <span class="keyword">while</span> (fast &amp;&amp; fast-&gt;next) &#123;</span><br><span class="line">            slow = slow-&gt;next;</span><br><span class="line">            fast = fast-&gt;next-&gt;next;</span><br><span class="line">            <span class="keyword">if</span> (slow == fast) &#123; <span class="comment">// 此时快慢指针相遇，证明链表有环</span></span><br><span class="line">                <span class="comment">// 慢指针从链表头部开始遍历</span></span><br><span class="line">                ListNode *slow2 = head;</span><br><span class="line">                <span class="keyword">while</span> (slow != slow2) &#123; <span class="comment">// 在环开始的点相遇</span></span><br><span class="line">                    slow = slow-&gt;next;</span><br><span class="line">                    slow2 = slow2-&gt;next;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> slow;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<img src="/2020/10/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/微信图片_20190829113352.jpg" alt="微信图片_20190829113352" style="zoom:50%;">
+<img src="/2020/08/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/微信图片_20190829113352.jpg" alt="微信图片_20190829113352" style="zoom:50%;">
 
 <p><strong>找到两个链表的相交节点</strong></p>
 <p>两种方法：</p>
@@ -373,7 +373,7 @@
 <p>给定一个包含 n + 1 个整数的数组 nums，其数字都在 1 到 n 之间（包括 1 和 n），可知至少存在一个重复的整数。假设只有一个重复的整数，找出这个重复的数</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入: [<span class="number">1</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">2</span>,<span class="number">2</span>]</span><br><span class="line">输出: <span class="number">2</span></span><br></pre></td></tr></table></figure>
 
-<img src="/2020/10/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/image-20201005200439527.png" alt="image-20201005200439527" style="zoom:67%;">
+<img src="/2020/08/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/image-20201005200439527.png" alt="image-20201005200439527" style="zoom:67%;">
 
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">findDuplicate</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;nums)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (nums.<span class="built_in">size</span>() &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> slow = nums[<span class="number">0</span>];</span><br><span class="line">        <span class="keyword">int</span> fast = nums[nums[<span class="number">0</span>]];</span><br><span class="line">        <span class="keyword">while</span> (slow != fast) &#123;</span><br><span class="line">            slow = nums[slow];</span><br><span class="line">            fast = nums[nums[fast]];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        fast = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (fast != slow) &#123;</span><br><span class="line">            fast = nums[fast];</span><br><span class="line">            slow = nums[slow];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> slow;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
       
@@ -407,8 +407,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/" rel="next" title="Redis对象">
-                <i class="fa fa-chevron-left"></i> Redis对象
+              <a href="/2020/06/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/" rel="next" title="fork, vfork, 写时复制">
+                <i class="fa fa-chevron-left"></i> fork, vfork, 写时复制
               </a>
             
           </div>
@@ -417,8 +417,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2020/10/05/%E9%94%81%E5%92%8CCAS%E6%93%8D%E4%BD%9C/" rel="prev" title="锁和CAS操作">
-                锁和CAS操作 <i class="fa fa-chevron-right"></i>
+              <a href="/2020/09/27/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/" rel="prev" title="order by是怎么工作的">
+                order by是怎么工作的 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -491,7 +491,7 @@
               
                 <a href="/archives/%7C%7Carchive">
               
-                  <span class="site-state-item-count">32</span>
+                  <span class="site-state-item-count">35</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -502,7 +502,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">14</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -513,7 +513,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">25</span>
+                  <span class="site-state-item-count">27</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

@@ -1,33 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>单例模式</title>
-    <url>/2020/10/07/%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<h3 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h3><p>单例模式作为最常用的设计模式之一，保证一个类仅有一个实例，并提供一个访问它的全局访问点，该实例被所有程序模块共享。</p>
-<p>实现思路：私有化它的构造函数，以防止外界创建单例类的对象；使用类的私有静态指针变量指向类的唯一实例，并用一个公有的静态方法获取该实例。</p>
-<p>单例模式有两种实现方法，分别是懒汉和饿汉模式。顾名思义，懒汉模式，即非常懒，不用的时候不去初始化，所以在第一次被使用时才进行初始化；饿汉模式，即迫不及待，在程序运行时立即初始化。</p>
-<h3 id="经典的线程安全懒汉模式"><a href="#经典的线程安全懒汉模式" class="headerlink" title="经典的线程安全懒汉模式"></a><strong>经典的线程安全懒汉模式</strong></h3><p>单例模式的实现思路如前述所示，其中，经典的线程安全懒汉模式，<strong>使用双检测锁模式</strong>。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">single</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> single *p;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">std</span>::mutex <span class="keyword">mutex_t</span>;</span><br><span class="line"></span><br><span class="line">    single() &#123;&#125;</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> single *<span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (p == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">            <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; lock(<span class="keyword">mutex_t</span>);</span><br><span class="line">            <span class="keyword">if</span> (p == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">                p = <span class="keyword">new</span> single;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> p;</span><br><span class="line">    &#125;</span><br><span class="line">    ~single()&#123;</span><br><span class="line">        <span class="keyword">delete</span> p;</span><br><span class="line">        p = <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">single *single::p = <span class="literal">nullptr</span>;</span><br><span class="line"><span class="built_in">std</span>::mutex single::<span class="keyword">mutex_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    single *s1 = single::getInstance();</span><br><span class="line">    single *s2 = single::getInstance();</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; s1 &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; s2 &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    <title>unique_ptr的一种实现方式</title>
+    <url>/2020/10/12/unique-ptr%E7%9A%84%E4%B8%80%E7%A7%8D%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<h3 id="unique-ptr说明"><a href="#unique-ptr说明" class="headerlink" title="unique_ptr说明"></a><strong>unique_ptr说明</strong></h3><p>unique_ptr“唯一”拥有其所指对象，同一时刻只能有一个unique_ptr指向给定对象。相比与原始指针unique_ptr由于其RAII的特性，使得在出现异常的情况下，动态资源能得到释放。unique_ptr指针本身的生命周期：从unique_ptr指针创建时开始，直到离开作用域。离开作用域时，若其指向对象，则将其所指对象销毁。</p>
+<p><strong>当程序试图将一个 unique_ptr 赋值给另一个时，如果源 unique_ptr 是个临时右值，编译器允许这么做；如果源 unique_ptr 将存在一段时间，编译器将禁止这么做</strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;memory&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;<span class="keyword">int</span>&gt; uptr(<span class="keyword">new</span> <span class="keyword">int</span>(<span class="number">10</span>));  <span class="comment">//绑定动态对象</span></span><br><span class="line">        <span class="comment">//std::unique_ptr&lt;int&gt; uptr2 = uptr;  //不能賦值</span></span><br><span class="line">        <span class="comment">//std::unique_ptr&lt;int&gt; uptr2(uptr);  //不能拷貝</span></span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;<span class="keyword">int</span>&gt; uptr2 = <span class="built_in">std</span>::<span class="built_in">move</span>(uptr); <span class="comment">//轉換所有權</span></span><br><span class="line">        uptr2.<span class="built_in">release</span>(); <span class="comment">//释放所有权</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//超過uptr的作用域，內存釋放</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><strong><code>为什么要用双检测，只检测一次不行吗？</code></strong></p>
-<p>如果只检测一次，在每次调用获取实例的方法时，都需要加锁，这将严重影响程序性能。双层检测可以有效避免这种情况，仅在第一次创建单例的时候加锁，其他时候都不再符合NULL == p的情况，直接返回已创建好的实例。</p>
-<hr>
-<h3 id="局部静态变量之线程安全懒汉模式"><a href="#局部静态变量之线程安全懒汉模式" class="headerlink" title="局部静态变量之线程安全懒汉模式"></a><strong>局部静态变量之线程安全懒汉模式</strong></h3><p>前面的双检测锁模式，写起来不太优雅，《Effective C++》（Item 04）中的提出另一种更优雅的单例模式实现，使用函数内的局部静态对象，这种方法不用加锁和解锁操作。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">single</span>&#123;</span></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">     single()&#123;&#125;</span><br><span class="line">     ~single()&#123;&#125;</span><br><span class="line"> </span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">     <span class="function"><span class="keyword">static</span> single* <span class="title">getinstance</span><span class="params">()</span></span>;</span><br><span class="line"> </span><br><span class="line"> &#125;;</span><br><span class="line"></span><br><span class="line">single* single::getinstance()&#123;</span><br><span class="line">    <span class="keyword">static</span> single obj;</span><br><span class="line">    <span class="keyword">return</span> &amp;obj;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a><strong>实现</strong></h3><p><strong>unique_ptr.cpp</strong></p>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">myUniquePtr</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    explicit myUniquePtr(T *ptr = nullptr) : mPtr(ptr) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    ~myUniquePtr() &#123;</span><br><span class="line">        <span class="keyword">if</span> (mPtr)</span><br><span class="line">            <span class="keyword">delete</span> mPtr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    myUniquePtr(<span class="keyword">const</span> myUniquePtr &amp;p) = <span class="keyword">delete</span>;</span><br><span class="line"></span><br><span class="line">    myUniquePtr &amp;<span class="keyword">operator</span>=(<span class="keyword">const</span> myUniquePtr &amp;p) = <span class="keyword">delete</span>;</span><br><span class="line"></span><br><span class="line">    myUniquePtr(myUniquePtr &amp;&amp;p) : mPtr(p.mPtr) &#123;</span><br><span class="line">        p.mPtr = <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    myUniquePtr &amp;<span class="keyword">operator</span>=(<span class="keyword">const</span> myUniquePtr &amp;&amp;p) &#123;</span><br><span class="line">        <span class="keyword">if</span> (p == *<span class="keyword">this</span>)</span><br><span class="line">            <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">if</span> (mPtr)</span><br><span class="line">            <span class="keyword">delete</span> mPtr;</span><br><span class="line">        mPtr = p.mPtr;</span><br><span class="line">        p.mPtr = <span class="literal">nullptr</span>;</span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    T *<span class="keyword">operator</span>-&gt;() <span class="keyword">const</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> mPtr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    T &amp;<span class="keyword">operator</span>*() <span class="keyword">const</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> *mPtr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">reset</span><span class="params">(T *p = <span class="literal">nullptr</span>)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mPtr != p) &#123;</span><br><span class="line">            <span class="keyword">if</span> (mPtr)</span><br><span class="line">                <span class="keyword">delete</span> mPtr;</span><br><span class="line">            mPtr = p;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function">T *<span class="title">release</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        T *res = mPtr;</span><br><span class="line">        mPtr = <span class="literal">nullptr</span>;</span><br><span class="line">        <span class="keyword">return</span> res;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    T *mPtr;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
-<p>其实，C++0X以后，要求编译器保证内部静态变量的线程安全性，故C++0x之后该实现是线程安全的，C++0x之前仍需加锁，其中C++0x是C++11标准成为正式标准之前的草案临时名字。</p>
-<hr>
-<h3 id="饿汉模式"><a href="#饿汉模式" class="headerlink" title="饿汉模式"></a><strong>饿汉模式</strong></h3><p>饿汉模式不需要用锁，就可以实现线程安全。原因在于，在程序运行时就定义了对象，并对其初始化。之后，不管哪个线程调用成员函数getinstance()，都只不过是返回一个对象的指针而已。所以是线程安全的，不需要在获取实例的成员函数中加锁。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">single</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> single *p;</span><br><span class="line">    single() &#123;&#125;</span><br><span class="line">    ~single() &#123;&#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> single *<span class="title">getinstance</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">single *single::p = <span class="keyword">new</span> single();</span><br><span class="line">single *single::getinstance() &#123;</span><br><span class="line">    <span class="keyword">return</span> p;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//测试方法</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    single *p1 = single::getinstance();</span><br><span class="line">    single *p2 = single::getinstance();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (p1 == p2)</span><br><span class="line">    	<span class="built_in">cout</span> &lt;&lt; <span class="string">"same"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">    system(<span class="string">"pause"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>饿汉模式虽好，但其存在隐藏的问题，在于非静态对象（函数外的static对象）在不同编译单元中的初始化顺序是未定义的。如果在初始化完成之前调用 getInstance() 方法会返回一个未定义的实例。</p>
 ]]></content>
       <categories>
-        <category>设计模式</category>
+        <category>C++</category>
       </categories>
       <tags>
         <tag>C++</tag>
-        <tag>设计模式</tag>
+        <tag>智能指针</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>shared_ptr的一种实现方式</title>
+    <url>/2020/10/12/shared-ptr%E7%9A%84%E4%B8%80%E7%A7%8D%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<p>shared_ptr多个指针指向相同的对象。shared_ptr使用引用计数，每一个shared_ptr的拷贝都指向相同的内存。每使用他一次，内部的引用计数加1，每析构一次，内部的引用计数减1，减为0时，自动删除所指向的堆内存。</p>
+<p><code>shared_ptr</code>内部包含两个指针，一个指向对象，另一个指向控制块(control block)，控制块中包含一个引用计数和其它一些数据。由于这个控制块需要在多个<code>shared_ptr</code>之间共享，所以它也是存在于 heap 中的。<code>shared_ptr</code>对象本身是线程安全的，也就是说<code>shared_ptr</code>的引用计数增加和减少的操作都是原子的</p>
+<img src="/2020/10/12/shared-ptr%E7%9A%84%E4%B8%80%E7%A7%8D%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/sh2.png" alt="img" style="zoom:90%;">
+
+<p><strong>smart_pointer.h</strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Created by lwl on 2020/8/7.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">smartPointer</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//控制块，管理者对象的创建、析构和引用计数</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Ptr</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    T *p;</span><br><span class="line">    <span class="keyword">int</span> count;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">friend</span> <span class="class"><span class="keyword">class</span> <span class="title">smartPointer</span>&lt;T&gt;;</span></span><br><span class="line"></span><br><span class="line">    Ptr(T *ptr) : p(ptr), count(<span class="number">1</span>) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    ~Ptr() &#123;</span><br><span class="line">        <span class="keyword">delete</span> p;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">smartPointer</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    Ptr&lt;T&gt; *ptr;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    smartPointer(T *t) : ptr(<span class="keyword">new</span> Ptr&lt;T&gt;(t)) &#123;&#125;;</span><br><span class="line"></span><br><span class="line">    smartPointer(<span class="keyword">const</span> smartPointer&lt;T&gt; &amp;s) : ptr(s.ptr) &#123;</span><br><span class="line">        ptr-&gt;count++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    smartPointer &amp;<span class="keyword">operator</span>=(<span class="keyword">const</span> smartPointer&lt;T&gt; &amp;s) &#123;</span><br><span class="line">        --ptr-&gt;count;</span><br><span class="line">        <span class="keyword">if</span> (ptr-&gt;count == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">delete</span> ptr;</span><br><span class="line">        &#125;</span><br><span class="line">        ++s.ptr-&gt;count;</span><br><span class="line">        ptr = s.ptr;</span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ~smartPointer() &#123;</span><br><span class="line">        --ptr-&gt;count;</span><br><span class="line">        <span class="keyword">if</span> (ptr-&gt;count == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">delete</span> ptr;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">cout</span> &lt;&lt; <span class="string">"还有"</span> &lt;&lt; ptr-&gt;count &lt;&lt; <span class="string">"个指针指向基础对象"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    T* <span class="keyword">operator</span>-&gt;()&#123;</span><br><span class="line">        <span class="keyword">return</span> ptr-&gt;p;</span><br><span class="line">    &#125;</span><br><span class="line">    T&amp; <span class="keyword">operator</span>*()&#123;</span><br><span class="line">        <span class="keyword">return</span> *ptr-&gt;p;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>test.cpp</strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"smart-pointer.h"</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Point</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    Point(<span class="keyword">int</span> xVal = <span class="number">0</span>, <span class="keyword">int</span> yVal = <span class="number">0</span>) : x(xVal), y(yVal) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">getX</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> x; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">getY</span><span class="params">()</span> <span class="keyword">const</span> </span>&#123; <span class="keyword">return</span> y; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setX</span><span class="params">(<span class="keyword">int</span> xVal)</span> </span>&#123; x = xVal; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setY</span><span class="params">(<span class="keyword">int</span> yVal)</span> </span>&#123; y = yVal; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">int</span> x, y;</span><br><span class="line"></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Point *p = <span class="keyword">new</span> Point(<span class="number">20</span>, <span class="number">10</span>);</span><br><span class="line">    &#123;</span><br><span class="line">        smartPointer&lt;Point&gt; ptr1(p);</span><br><span class="line">        &#123;</span><br><span class="line">            smartPointer&lt;Point&gt; ptr2(ptr1);</span><br><span class="line">            &#123;</span><br><span class="line">                smartPointer&lt;Point&gt; ptr3(ptr1);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; p-&gt;getX() &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>输出：</strong></p>
+<figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line">还有<span class="number">2</span>个指针指向基础对象</span><br><span class="line">还有<span class="number">1</span>个指针指向基础对象</span><br><span class="line"><span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>智能指针</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>分布式锁</title>
+    <url>/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/</url>
+    <content><![CDATA[<h4 id="为什么要使用分布式锁"><a href="#为什么要使用分布式锁" class="headerlink" title="为什么要使用分布式锁"></a>为什么要使用分布式锁</h4><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-7cc8f57c65d81728.png" alt="img" style="zoom:80%;">
+
+<ul>
+<li>成员变量 A 存在 JVM1、JVM2、JVM3 三个 JVM 内存中</li>
+<li>成员变量 A 同时都会在 JVM 分配一块内存，三个请求发过来同时对这个变量操作，显然结果是不对的</li>
+<li>不是同时发过来，三个请求分别操作三个不同 JVM 内存区域的数据，变量 A 之间不存在共享，也不具有可见性，处理的结果也是不对的</li>
+</ul>
+<p>如果我们业务中确实存在这个场景的话，我们就需要一种方法解决这个问题，<strong>这就是分布式锁要解决的问题</strong></p>
+<h4 id="分布式锁应该具备哪些条件"><a href="#分布式锁应该具备哪些条件" class="headerlink" title="分布式锁应该具备哪些条件"></a>分布式锁应该具备哪些条件</h4><ul>
+<li>在分布式系统环境下，一个方法在同一时间只能被一个机器的一个线程执行</li>
+<li>高可用的获取锁与释放锁</li>
+<li>高性能的获取锁与释放锁</li>
+<li>具备可重入特性（可理解为重新进入，由多于一个任务并发使用，而不必担心数据错误）</li>
+<li>具备锁失效机制，防止死锁</li>
+<li>具备非阻塞锁特性，即没有获取到锁将直接返回获取锁失败</li>
+</ul>
+<h4 id="分布式锁的实现有哪些"><a href="#分布式锁的实现有哪些" class="headerlink" title="分布式锁的实现有哪些"></a>分布式锁的实现有哪些</h4><ul>
+<li>Memcached：利用 Memcached 的 <code>add</code> 命令。此命令是原子性操作，只有在 <code>key</code> 不存在的情况下，才能 <code>add</code> 成功，也就意味着线程得到了锁。</li>
+<li>Redis：和 Memcached 的方式类似，利用 Redis 的 <code>setnx</code> 命令。此命令同样是原子性操作，只有在 <code>key</code> 不存在的情况下，才能 <code>set</code> 成功。</li>
+<li><strong>Zookeeper</strong>：利用 Zookeeper 的顺序临时节点，来实现分布式锁和等待队列。Zookeeper 设计的初衷，就是为了实现分布式锁服务的。</li>
+</ul>
+<hr>
+<h4 id="通过-Redis-分布式锁的实现理解基本概念"><a href="#通过-Redis-分布式锁的实现理解基本概念" class="headerlink" title="通过 Redis 分布式锁的实现理解基本概念"></a>通过 Redis 分布式锁的实现理解基本概念</h4><p>分布式锁实现的三个核心要素：</p>
+<p><strong>加锁</strong></p>
+<p>最简单的方法是使用 <code>setnx</code> 命令。<code>key</code> 是锁的唯一标识，按业务来决定命名。比如想要给一种商品的秒杀活动加锁，可以给 <code>key</code> 命名为 “lock_sale_商品ID” 。而 <code>value</code> 设置成什么呢？我们可以姑且设置成 <code>1</code>。加锁的伪代码如下：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">setnx（lock_sale_商品ID，<span class="number">1</span>）</span><br></pre></td></tr></table></figure>
+
+<p>当一个线程执行 <code>setnx</code> 返回 <code>1</code>，说明 <code>key</code> 原本不存在，该线程成功得到了锁；当一个线程执行 <code>setnx</code> 返回 <code>0</code>，说明 <code>key</code> 已经存在，该线程抢锁失败。</p>
+<p><strong>解锁</strong></p>
+<p>有加锁就得有解锁。当得到锁的线程执行完任务，需要释放锁，以便其他线程可以进入。释放锁的最简单方式是执行 <code>del</code> 指令，伪代码如下：</p>
+<figure class="highlight dos"><table><tr><td class="code"><pre><span class="line"><span class="built_in">del</span>（lock_sale_商品ID）</span><br></pre></td></tr></table></figure>
+
+<p>释放锁之后，其他线程就可以继续执行 <code>setnx</code> 命令来获得锁。</p>
+<p><strong>锁超时</strong></p>
+<p>锁超时是什么意思呢？如果一个得到锁的线程在执行任务的过程中挂掉，来不及显式地释放锁，这块资源将会永远被锁住（<strong>死锁</strong>），别的线程再也别想进来。所以，<code>setnx</code> 的 <code>key</code> 必须设置一个超时时间，以保证即使没有被显式释放，这把锁也要在一定时间后自动释放。<code>setnx</code> 不支持超时参数，所以需要额外的指令，伪代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">expire（lock_sale_商品ID， 30）</span><br></pre></td></tr></table></figure>
+
+<p>综合伪代码如下：</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span>（setnx（lock_sale_商品ID，<span class="number">1</span>） == <span class="number">1</span>）&#123;</span><br><span class="line">    expire（lock_sale_商品ID，<span class="number">30</span>）</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">do</span> something ......</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        del（lock_sale_商品ID）</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h4 id="存在什么问题"><a href="#存在什么问题" class="headerlink" title="存在什么问题"></a><strong>存在什么问题</strong></h4><p>以上伪代码中存在三个致命问题</p>
+<h5 id="setnx-和-expire-的非原子性"><a href="#setnx-和-expire-的非原子性" class="headerlink" title="setnx 和 expire 的非原子性"></a><code>setnx</code> 和 <code>expire</code> 的非原子性</h5><p>设想一个极端场景，当某线程执行 <code>setnx</code>，成功得到了锁：</p>
+<img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-153ca0fbc59af246.png" alt="img">
+
+<p><code>setnx</code> 刚执行成功，还未来得及执行 <code>expire</code> 指令，节点 1 挂掉了。</p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-616a3d3f9f42b60d.png" alt="img"></p>
+<p>这样一来，这把锁就没有设置过期时间，变成<strong>死锁</strong>，别的线程再也无法获得锁了。</p>
+<p>怎么解决呢？<code>setnx</code> 指令本身是不支持传入超时时间的，<code>set</code> 指令增加了可选参数，伪代码如下：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">set</span>（lock_sale_商品ID，1，30，NX）</span><br></pre></td></tr></table></figure>
+
+<p>这样就可以取代 <code>setnx</code> 指令</p>
+<hr>
+<h5 id="del-导致误删"><a href="#del-导致误删" class="headerlink" title="del 导致误删"></a><code>del</code> 导致误删</h5><p>又是一个极端场景，假如某线程成功得到了锁，并且设置的超时时间是 30 秒。</p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-9c744a0adacf3591.png" alt="img"></p>
+<p>如果某些原因导致线程 A 执行的很慢很慢，过了 30 秒都没执行完，这时候锁过期自动释放，线程 B 得到了锁</p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-aff00874eea4ffb2.png" alt="img"></p>
+<p>随后，线程 A 执行完了任务，线程 A 接着执行 <code>del</code> 指令来释放锁。但这时候线程 B 还没执行完，线程A实际上<strong>删除的是线程 B 加的锁</strong></p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-d641463ea89da638.png" alt="img"></p>
+<p>怎么避免这种情况呢？可以在 <code>del</code> 释放锁之前做一个判断，验证当前的锁是不是自己加的锁。至于具体的实现，可以在加锁的时候把当前的线程 ID 当做 <code>value</code>，并在删除之前验证 <code>key</code> 对应的 <code>value</code> 是不是自己线程的 ID</p>
+<p>加锁：</p>
+<figure class="highlight dart"><table><tr><td class="code"><pre><span class="line"><span class="built_in">String</span> threadId = Thread.currentThread().getId()</span><br><span class="line"><span class="keyword">set</span>（key，threadId ，<span class="number">30</span>，NX）</span><br></pre></td></tr></table></figure>
+
+<p>解锁：</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span>（threadId .<span class="keyword">equals</span>(redisClient.<span class="keyword">get</span>(key))）&#123;</span><br><span class="line">    del(key)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但是，这样做又隐含了一个新的问题，判断和释放锁是两个独立操作，不是原子性</p>
+<h5 id="出现并发的可能性"><a href="#出现并发的可能性" class="headerlink" title="出现并发的可能性"></a>出现并发的可能性</h5><p>还是刚才第二点所描述的场景，虽然我们避免了线程 A 误删掉 <code>key</code> 的情况，但是同一时间有 A，B 两个线程在访问代码块，仍然是不完美的。怎么办呢？我们可以让获得锁的线程开启一个<strong>守护线程</strong>，用来给快要过期的锁“续航”</p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-e6e284f3c6a07a85.png" alt="img"></p>
+<p>当过去了 29 秒，线程 A 还没执行完，这时候守护线程会执行 <code>expire</code> 指令，为这把锁“续命”20 秒。守护线程从第 29 秒开始执行，每 20 秒执行一次</p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-723b942f08f9304b.png" alt="img"></p>
+<p>当线程 A 执行完任务，会显式关掉守护线程</p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-316383d4d0af2be6.png" alt="img"></p>
+<p>另一种情况，如果节点 1 忽然断电，由于线程 A 和守护线程在同一个进程，守护线程也会停下。这把锁到了超时的时候，没人给它续命，也就自动释放了</p>
+<p><img src="/2020/10/12/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/7986413-e41eb41db50fa1b9.png" alt="img"></p>
+]]></content>
+      <categories>
+        <category>分布式</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+        <tag>分布式</tag>
       </tags>
   </entry>
   <entry>
@@ -54,108 +155,11 @@
 <p>InnoDB的刷盘速度就是要参考这两个因素：一个是脏页比例，一个是redo log写盘速度。</p>
 <p>F1计算方法：参数innodb_max_dirty_pages_pct是脏页比例上限，默认值是75%。InnoDB会根据当前的脏页比例（假设为M），算出一个范围在0到100之间的数字</p>
 <p>F2计算方法：InnoDB每次写入的日志都有一个序号，当前写入的序号跟checkpoint对应的序号之间的差值，我们假设为N。InnoDB会根据这个N算出一个范围在0到100之间的数字</p>
-<img src="/2020/10/07/%E4%B8%BA%E4%BB%80%E4%B9%88MySQL%E4%BC%9A%E6%8A%96%E4%B8%80%E4%B8%8B/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716151702090.png" alt="image-20200716151702090" style="zoom:40%;">
+<img src="/2020/10/07/%E4%B8%BA%E4%BB%80%E4%B9%88MySQL%E4%BC%9A%E6%8A%96%E4%B8%80%E4%B8%8B/image-20200716151702090.png" alt="image-20200716151702090" style="zoom:40%;">
 
 <p>一旦一个查询请求需要在执行过程中先flush掉一个脏页时，这个查询就可能要比平时慢了。而MySQL中的一个机制，可能让你的查询会更慢：在准备刷一个脏页的时候，如果这个数据页旁边的数据页刚好是脏页，就会把这个“邻居”也带着一起刷掉；而且这个把“邻居”拖下水的逻辑还可以继续蔓延，也就是对于每个邻居数据页，如果跟它相邻的数据页也还是脏页的话，也会被放到一起刷。</p>
 <p>在InnoDB中，innodb_flush_neighbors 参数就是用来控制这个行为的，值为1的时候会有上述的“连坐”机制，值为0时表示不找邻居，自己刷自己的。</p>
 <p>在MySQL 8.0中，innodb_flush_neighbors参数的默认值已经是0了。</p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-      <tags>
-        <tag>MySQL</tag>
-        <tag>数据库</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>order by是怎么工作的</title>
-    <url>/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/</url>
-    <content><![CDATA[<p>假设你要查询城市是“杭州”的所有人名字，并且按照<strong>姓名排序</strong>返回前1000个人的姓名、年龄。</p>
-<p>假设这个表的部分定义是这样的：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`t`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`city`</span> <span class="built_in">varchar</span>(<span class="number">16</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`name`</span> <span class="built_in">varchar</span>(<span class="number">16</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`age`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`addr`</span> <span class="built_in">varchar</span>(<span class="number">128</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`city`</span> (<span class="string">`city`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span>;</span><br></pre></td></tr></table></figure>
-
-<p>这时，你的SQL语句可以这么写：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> city,<span class="keyword">name</span>,age <span class="keyword">from</span> t <span class="keyword">where</span> city=<span class="string">'杭州'</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="keyword">name</span> <span class="keyword">limit</span> <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
-
-<p>下面讲解这个语句的执行流程。</p>
-<p><strong>全字段排序</strong></p>
-<p>为避免全表扫描，我们需要在city字段加上索引</p>
-<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716172934243.png" alt="image-20200716172934243" style="zoom:40%;">
-
-<p>从图中可以看到，满足city=’杭州’条件的行，是从ID_X到ID_(X+N)的这些记录。</p>
-<p>通常情况下，这个语句执行流程如下所示 ：</p>
-<ol>
-<li>初始化<strong>sort_buffer</strong>，确定放入name、city、age这三个字段；</li>
-<li>从索引city找到第一个满足city=’杭州’条件的主键id，也就是图中的ID_X；</li>
-<li>到主键id索引取出整行，取name、city、age三个字段的值，存入sort_buffer中；</li>
-<li>从索引city取下一个记录的主键id；</li>
-<li>重复步骤3、4直到city的值不满足查询条件为止，对应的主键id也就是图中的ID_Y；</li>
-<li>对sort_buffer中的数据按照字段name做快速排序；</li>
-<li>按照排序结果取前1000行返回给客户端。</li>
-</ol>
-<p>我们暂且把这个排序过程，称为全字段排序，执行流程的示意图如下所示</p>
-<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716173046109.png" alt="image-20200716173046109" style="zoom: 45%;">
-
-<p>图中“按name排序”这个动作，可能在内存中完成，也可能需要使用外部排序，这取决于排序所需的内存和参数sort_buffer_size。</p>
-<p>sort_buffer_size，就是MySQL为排序开辟的内存（sort_buffer）的大小。如果要排序的数据量小于sort_buffer_size，排序就在内存中完成。但如果排序数据量太大，内存放不下，则不得不利用磁盘临时文件辅助排序。</p>
-<p><strong>rowid排序</strong></p>
-<p>在上面这个算法过程里面，只对原表的数据读了一遍，剩下的操作都是在sort_buffer和临时文件中执行的。但这个算法有一个问题，就是如果查询要返回的字段很多的话，那么sort_buffer里面要放的字段数太多，这样内存里能够同时放下的行数很少，要分成很多个临时文件，排序的性能会很差。</p>
-<p>max_length_for_sort_data，是MySQL中专门控制用于排序的行数据的长度的一个参数。它的意思是，如果单行的长度超过这个值，MySQL就认为单行太大，要换一个算法</p>
-<p>新的算法放入sort_buffer的字段，只有要<strong>排序的列（即name字段</strong>）和<strong>主键id</strong>。</p>
-<p>但这时，排序的结果就因为少了city和age字段的值，不能直接返回了，整个执行流程就变成如下所示的样子：</p>
-<ol>
-<li>初始化sort_buffer，确定放入两个字段，即name和id；</li>
-<li>从索引city找到第一个满足city=’杭州’条件的主键id，也就是图中的ID_X；</li>
-<li>到主键id索引取出整行，取name、id这两个字段，存入sort_buffer中；</li>
-<li>从索引city取下一个记录的主键id；</li>
-<li>重复步骤3、4直到不满足city=’杭州’条件为止，也就是图中的ID_Y；</li>
-<li>对sort_buffer中的数据按照字段name进行排序；</li>
-<li>遍历排序结果，取前1000行，并按照id的值回到原表中取出city、name和age三个字段返回给客户端。</li>
-</ol>
-<p>这个执行流程的示意图如下，我把它称为rowid排序。</p>
-<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716173352103.png" alt="image-20200716173352103" style="zoom:45%;">
-
-<p>rowid排序多访问了一次表t的主键索引，就是步骤7。需要说明的是，最后的“结果集”是一个逻辑概念，实际上MySQL服务端从排序后的sort_buffer中依次取出id，然后到原表查到city、name和age这三个字段的结果，不需要在服务端再耗费内存存储结果，是直接返回给客户端的。</p>
-<p><strong>全字段排序 VS rowid排序</strong></p>
-<p>如果MySQL实在是担心排序内存太小，会影响排序效率，才会采用rowid排序算法，这样排序过程中一次可以排序更多行，但是需要再回到原表去取数据。</p>
-<p>如果MySQL认为内存足够大，会优先选择全字段排序，把需要的字段都放到sort_buffer中，这样排序后就会直接从内存里面返回查询结果了，不用再回到原表去取数据。</p>
-<p>这也就体现了MySQL的一个设计思想：<strong>如果内存够，就要多利用内存，尽量减少磁盘访问。</strong></p>
-<p>对于InnoDB表来说，rowid排序会要求回表多造成磁盘读，因此不会被优先选择。</p>
-<p><strong>其实，并不是所有的order by语句，都需要排序操作的。</strong>你可以设想下，如果能够保证从city这个索引上取出来的行，天然就是按照name递增排序的话，是不是就可以不用再排序了呢？</p>
-<p>所以，我们可以在这个市民表上创建一个city和name的联合索引，对应的SQL语句是</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t <span class="keyword">add</span> <span class="keyword">index</span> city_user(city, <span class="keyword">name</span>);</span><br></pre></td></tr></table></figure>
-
-<p>作为与city索引的对比，我们来看看这个索引的示意图。</p>
-<img src="/2020/10/07/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/Users/hqnddw/Desktop/md文件/数据库.assets/image-20200716173702334.png" alt="image-20200716173702334" style="zoom:45%;">
-
-<p>这样整个查询过程的流程就变成了：</p>
-<ol>
-<li>从索引(city,name)找到第一个满足city=’杭州’条件的主键id；</li>
-<li>到主键id索引取出整行，取name、city、age三个字段的值，作为结果集的一部分直接返回；</li>
-<li>从索引(city,name)取下一个记录主键id；</li>
-<li>重复步骤2、3，直到查到第1000条记录，或者是不满足city=’杭州’条件时循环结束</li>
-</ol>
-<p><strong>这个语句的执行流程有没有可能进一步简化呢？</strong></p>
-<p><strong>覆盖索引是指，索引上的信息足够满足查询请求，不需要再回到主键索引上去取数据。</strong>按照覆盖索引的概念，我们可以再优化一下这个查询语句的执行流程。</p>
-<p>针对这个查询，我们可以创建一个city、name和age的联合索引，对应的SQL语句就是：</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t <span class="keyword">add</span> <span class="keyword">index</span> city_user_age(city, <span class="keyword">name</span>, age);</span><br></pre></td></tr></table></figure>
-
-<p>这时，对于city字段的值相同的行来说，还是按照name字段的值递增排序的，此时的查询语句也就不再需要排序了。这样整个查询语句的执行流程就变成了：</p>
-<ol>
-<li>从索引(city,name,age)找到第一个满足city=’杭州’条件的记录，取出其中的city、name和age这三个字段的值，作为结果集的一部分直接返回；</li>
-<li>从索引(city,name,age)取下一个记录，同样取出这三个字段的值，作为结果集的一部分直接返回；</li>
-<li>重复执行步骤2，直到查到第1000条记录，或者是不满足city=’杭州’条件时循环结束。</li>
-</ol>
-<hr>
-<ol>
-<li>无条件查询如果只有order by create_time,<strong>即便create_time上有索引,也不会使用到。</strong><br>因为优化器认为走二级索引再去回表成本比全表扫描排序更高。所以选择走全表扫描,</li>
-<li>无条件查询但是是order by create_time limit m.<strong>如果m值较小,是可以走索引的.</strong><br>因为优化器认为根据索引有序性去回表查数据，然后得到m条数据,就可以终止循环，那么成本比全表扫描小，则选择走二级索引。即便没有二级索引，<strong>mysql针对order by limit也做了优化，采用堆排序</strong></li>
-<li>如果是group by a，a上不能使用索引的情况，是走rowid排序。</li>
-<li>如果是group by limit，不能使用索引的情况，是走堆排序</li>
-<li>select * from t group by a –走的是索引全扫描</li>
-<li>select a from t group by a –走的是索引松散扫描，也就说只需要扫描每组的第一行数据即可，不用扫描每一行的值</li>
-</ol>
 ]]></content>
       <categories>
         <category>MySQL</category>
@@ -215,98 +219,11 @@
 <p>因此，会话B看到的结果里， 查计数值和“最近100条记录”看到的结果，逻辑上就是一致的。</p>
 ]]></content>
       <categories>
-        <category>数据库</category>
+        <category>MySQL</category>
       </categories>
       <tags>
         <tag>MySQL</tag>
         <tag>数据库</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>fork, vfork, 写时复制</title>
-    <url>/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/</url>
-    <content><![CDATA[<h3 id="fork"><a href="#fork" class="headerlink" title="fork"></a>fork</h3><p>fork调用一次，返回两次，子进程的返回值为0，父进程的返回值为子进程的pid</p>
-<p>子进程是父进程的副本。子进程获得父进程<strong>数据空间、堆和栈</strong>的<strong>副本</strong>。注意，这是子进程所拥有的的副本，父进程和子进程并不共享这些存储空间部分。父进程和子进程<strong>共享正文段</strong>。（fork也会复制父进程缓冲区的数据到子进程的缓冲区。父进程和子进程每个相同的打开文件描述符共享同一文件表项，父进程和子进程也共享同一文件的偏移量）</p>
-<img src="/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013407086.png" alt="image-20200728013407086" style="zoom:45%;">
-
-<p><strong>fork出错的原因：</strong></p>
-<ul>
-<li>当前的进程数已经达到了系统规定的上限，这时errno的值被设置为EAGAIN。</li>
-<li>系统内存不足，这时errno的值被设置为ENOMEM。</li>
-</ul>
-<h3 id="写时复制"><a href="#写时复制" class="headerlink" title="写时复制"></a>写时复制</h3><p>内核只为新生成的子进程创建虚拟空间结构，它们来复制于父进程的虚拟空间结构，但是不为这些段分配物理内存，它们共享父进程的物理空间，当父子进程中有更改相应段的行为发生时，再为子进程相应的段分配物理空间</p>
-<img src="/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013607556.png" alt="image-20200728013607556" style="zoom:45%;">
-
-<h3 id="vfork"><a href="#vfork" class="headerlink" title="vfork()"></a><strong>vfork()</strong></h3><p>内核连子进程的虚拟地址空间结构也不创建了，直接共享了父进程的虚拟空间，当然了，这种做法就顺水推舟的共享了父进程的物理空间</p>
-<img src="/2020/10/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013657849.png" alt="image-20200728013657849" style="zoom:45%;">
-
-<p>fork和vfork的区别：</p>
-<ul>
-<li>fork ()：子进程拷贝父进程的数据段，代码段 ；vfork ()：子进程与父进程共享数据段 </li>
-<li>fork ()：父子进程的执行次序不确定；vfork 保证子进程先运行，在它调用exec或exit 之后父进程才可能被调度运行。 如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则会导致死锁。 </li>
-</ul>
-]]></content>
-      <categories>
-        <category>操作系统</category>
-      </categories>
-      <tags>
-        <tag>fork</tag>
-        <tag>操作系统</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Redis过期键删除策略</title>
-    <url>/2020/10/06/%E8%BF%87%E6%9C%9F%E9%94%AE%E5%88%A0%E9%99%A4%E7%AD%96%E7%95%A5/</url>
-    <content><![CDATA[<h3 id="过期键的删除策略"><a href="#过期键的删除策略" class="headerlink" title="过期键的删除策略"></a>过期键的删除策略</h3><ol>
-<li><p><strong>定时删除</strong>：在设置键的过期时间的同时，创建一个定时器，让定时器在键的过期时间来临时，立即删除对键的删除操作</p>
-<p>主动删除，对内存友好，对cpu不友好</p>
-</li>
-<li><p><strong>惰性删除</strong>：放任键过期不管，但每次从键空间中获取键时，都检查取得的键是否过期，如果过期的话，就删除该键。如果没有过期，就返回该键</p>
-<p>被动删除，对cpu友好，对内存不友好</p>
-</li>
-<li><p><strong>定期删除</strong>：是前两种删除策略的一种折中。会每隔一段时间执行一次删除过期键操作，并通过限制操作执行的时长和频率来减少删除操作对cpu时间的影响</p>
-<p>难点是确定删除策略的时长和频率</p>
-</li>
-</ol>
-<h3 id="Redis过期键删除策略"><a href="#Redis过期键删除策略" class="headerlink" title="Redis过期键删除策略"></a>Redis过期键删除策略</h3><p>Redis服务器实际使用的是<strong>惰性删除和定期删除</strong>两种策略：通过配合使用这两种删除策略，服务器可以很好地在合理使用CPU时间和避免浪费内存空间之间取得平衡。</p>
-<h4 id="惰性删除策略的实现"><a href="#惰性删除策略的实现" class="headerlink" title="惰性删除策略的实现"></a>惰性删除策略的实现</h4><p>过期键的惰性删除策略由<code>db.c/expireIfNeeded</code>函数实现，所有读写数据库的Redis命令在执行之前都会调用expireIfNeeded函数对输入键进行检查：</p>
-<ul>
-<li>如果输入键已经过期，那么expireIfNeeded函数将输入键从数据库中删除。</li>
-<li>如果输入键未过期，那么expireIfNeeded函数不做动作</li>
-</ul>
-<img src="/2020/10/06/%E8%BF%87%E6%9C%9F%E9%94%AE%E5%88%A0%E9%99%A4%E7%AD%96%E7%95%A5/4633437-bc63f95d1c8b6114.png" alt="img" style="zoom:90%;">
-
-<h4 id="定期删除键的策略实现"><a href="#定期删除键的策略实现" class="headerlink" title="定期删除键的策略实现"></a>定期删除键的策略实现</h4><p>过期键的定期删除策略由 <code>redis.c/activeExpireCycle</code>函数实现，每当 Redis 的服务器周期性操作 <code>redis.c/serverCron</code> 函数执行时， activeExpireCycle 函数就会被调用，它在规定的时间内分多次遍历服务器的各个数据库，检查数据库的 expires 字典中部分键(相当于分页查询)的过期时间，并删除它。步骤如下：</p>
-<ol>
-<li>函数每次运行时，都从一定数量的数据库取出一定数量的随机键进行检查，并删除其中的过期键。</li>
-<li>全局变量 current_db 会记录当前 activeExpireCycle 函数的检查进度，并在下一次 activeExpireCycle 调用时，接着上一次的进度进行处理。</li>
-<li>随着 activeExpireCycle 函数的不断执行，服务器中的所有数据库都会被检查一遍，当到达最后时，把 current_db 设置为 0，然后又重新开始，如此循环下去。</li>
-</ol>
-<hr>
-<h3 id="RDB、AOF和复制功能对过期键的处理"><a href="#RDB、AOF和复制功能对过期键的处理" class="headerlink" title="RDB、AOF和复制功能对过期键的处理"></a>RDB、AOF和复制功能对过期键的处理</h3><h4 id="生成RDB文件"><a href="#生成RDB文件" class="headerlink" title="生成RDB文件"></a>生成RDB文件</h4><p>在执行SAVE命令和BGSAVE命令创建一个RDB文件时，程序会对数据库中的键进行检查，已过期的键不会保存到新创建的RDB文件中</p>
-<h4 id="载入RDB文件"><a href="#载入RDB文件" class="headerlink" title="载入RDB文件"></a>载入RDB文件</h4><p>在启动Redis服务器时，如果服务器开启了RDB功能，那么服务器将对RDB文件进行载入</p>
-<ul>
-<li>如果<strong>服务器以主服务器模式</strong>运行，那么在载入RDB文件时，程序会对文件中保存的键进行检查，<strong>未过期的键会被载入到数据库中，而过期键则会被忽略</strong>，所以过期键对载入RDB文 件的主服务器不会造成影响</li>
-<li>如果<strong>服务器以从服务器模式</strong>运行，那么在载入RDB文件时，文件中保存的所有键，<strong>不论是否过期，都会被载入到数据库中</strong></li>
-</ul>
-<hr>
-<h4 id="AOF文件写入"><a href="#AOF文件写入" class="headerlink" title="AOF文件写入"></a>AOF文件写入</h4><p>当服务器以AOF持久化模式运行时，如果数据库中的某个键已经过期，但它还没有被惰性删除或者定期删除，那么<strong>AOF文件不会因为这个过期键而产生任何影响</strong></p>
-<p>当过期键被惰性删除或者定期删除之后，程序会<strong>向AOF文件追加（append）一条DEL命令</strong>，来显式地记录该键已被删除</p>
-<h4 id="AOF重写"><a href="#AOF重写" class="headerlink" title="AOF重写"></a>AOF重写</h4><p>和生成RDB文件时类似，在执行AOF重写的过程中，程序会对数据库中的键进行检查， <strong>已过期的键不会被保存到重写后的AOF文件中</strong></p>
-<hr>
-<h4 id="复制与过期键的关系"><a href="#复制与过期键的关系" class="headerlink" title="复制与过期键的关系"></a>复制与过期键的关系</h4><p>当服务器运行在复制模式下时，从服务器的过期键删除动作由主服务器控制:</p>
-<ul>
-<li>主服务器在删除一个过期键之后，会<strong>显式地向所有从服务器发送一个DEL命令</strong>，告知从服务器删除这个过期键</li>
-<li>从服务器在执行客户端发送的读命令时，即使碰到过期键也不会将过期键删除，而是继续像处理未过期的键一样来处理过期键</li>
-<li>从服务器<strong>只有在接到主服务器发来的DEL命令之后</strong>，才会删除过期键</li>
-</ul>
-<p>通过由主服务器来控制从服务器统一地删除过期键，可以<strong>保证主从服务器数据的一致性</strong></p>
-]]></content>
-      <categories>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>Redis</tag>
       </tags>
   </entry>
   <entry>
@@ -446,104 +363,6 @@
       <tags>
         <tag>HTTP</tag>
         <tag>计算机网络网络</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>C++之多态</title>
-    <url>/2020/10/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/</url>
-    <content><![CDATA[<p>多态，即多种状态（形态）。简单的来说，我们可以将多态定义为消息以多种形式显示的能力。<strong><strong>同一操作作用于不同的对象，可以有不同的解释，产生不同的执行结果，这就是多态性</strong></strong>。用父类型别的指针指向其子类的实例，然后通过父类的指针调用实际子类的成员函数。这种技术可以让父类的指针有“多种形态”</p>
-<h3 id="C-多态分类及实现"><a href="#C-多态分类及实现" class="headerlink" title="C++ 多态分类及实现"></a>C++ 多态分类及实现</h3><img src="/2020/10/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/inheritance.png" alt="img" style="zoom: 80%;">
-
-
-
-<ul>
-<li><p>应用形式上：静多态是发散式的，让相同的实现代码应用于不同的场合。动多态是收敛式的，让不同的实现代码应用于相同的场合。</p>
-</li>
-<li><p>思维方式上：静多态是泛型式编程风格，它看重的是算法的普适性；动多态是对象式编程风格，它看重的是接口和实现的分离度。</p>
-</li>
-</ul>
-<h3 id="静态多态"><a href="#静态多态" class="headerlink" title="静态多态"></a><strong>静态多态</strong></h3><p>静态多态是编译器在编译期间完成的，编译器会根据实参类型来选择调用合适的函数，如果有合适的函数可以调用就调，没有的话就会发出警告或者报错</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">do</span><span class="params">(<span class="keyword">int</span> a)</span></span>;  <span class="comment">//函数重载的返回值可以不同</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">do</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<h3 id="动态多态"><a href="#动态多态" class="headerlink" title="动态多态"></a>动态多态</h3><img src="/2020/10/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/image-20201006193658514.png" alt="image-20201006193658514" style="zoom:80%;">
-
-<p>动态多态是在<strong>程序运行时</strong>根据基类的引用（指针）指向的对象来确定自己具体该调用哪一个类的虚函数。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Shape</span>                     // 形状类</span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">double</span> <span class="title">calcArea</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">virtual</span> ~Shape();</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Circle</span> :</span> <span class="keyword">public</span> Shape     <span class="comment">// 圆形类</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">double</span> <span class="title">calcArea</span><span class="params">()</span></span>;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rect</span> :</span> <span class="keyword">public</span> Shape       <span class="comment">// 矩形类</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">double</span> <span class="title">calcArea</span><span class="params">()</span></span>;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Shape * shape1 = <span class="keyword">new</span> Circle(<span class="number">4.0</span>);</span><br><span class="line">    Shape * shape2 = <span class="keyword">new</span> Rect(<span class="number">5.0</span>, <span class="number">6.0</span>);</span><br><span class="line">    shape1-&gt;calcArea();         <span class="comment">// 调用圆形类里面的方法</span></span><br><span class="line">    shape2-&gt;calcArea();         <span class="comment">// 调用矩形类里面的方法</span></span><br><span class="line">    <span class="keyword">delete</span> shape1;</span><br><span class="line">    shape1 = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">delete</span> shape2;</span><br><span class="line">    shape2 = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>动态多态的条件：</strong></p>
-<ul>
-<li>基类中必须包含虚函数，并且派生类中一定要对基类中的虚函数进行<strong>重写</strong>。</li>
-<li>通过基类对象的指针或者引用调用虚函数。</li>
-</ul>
-<p><strong>多态有什么好处</strong></p>
-<ol>
-<li>应用程序不必为每一个派生类编写功能调用，只需要对抽象基类进行重写即可。提高程序的<strong>可复用性</strong></li>
-<li>派生类的功能可以被基类对象的指针或引用所调用，提高了<strong>可扩充性</strong>和<strong>可维护性</strong></li>
-</ol>
-<p><strong>虚函数</strong></p>
-<ul>
-<li><p>如果在基类中定义了虚函数，派生类中的同名函数将自动变为虚函数</p>
-</li>
-<li><p>如果派生类中重新定义了基类中的虚函数，这样程序就会根据对象类型而不是引用或指针的类型来选择方法</p>
-<p><strong>注意：</strong></p>
-<ul>
-<li><p>普通函数（非类成员函数）不能是虚函数</p>
-</li>
-<li><p>静态成员函数不可以是虚函数。虚函数依靠vptr和vtable来处理。vptr是一个指针，在类的构造函数中创建生成，并且只能用this指针来访问它，因为它是类的一个成员，并且vptr指向保存虚函数地址的vtable.对于静态成员函数，它没有this指针，所以无法访问vptr. 这就是为何static函数不能为virtual.</p>
-<p><strong>虚函数的调用关系：this -&gt; vptr -&gt; vtable -&gt;virtual function</strong></p>
-</li>
-<li><p>构造函数无法是虚函数，因为调用虚函数需要虚函数表指针，而在执行构造函数之前是没有虚函数表指针的。</p>
-</li>
-<li><p>内联函数是在编译阶段进行展开，inline关键字作为提示符告诉编译器此函数作为内联函数希望在编译阶段展开，但是，编译器并不一定要展开。所以可以声明为<strong>inline虚析构函数</strong></p>
-</li>
-</ul>
-</li>
-</ul>
-<p><strong>虚析构函数是为了解决基类的指针指向派生类对象，并用基类的指针删除派生类对象</strong>。</p>
-<p><strong>基类的析构函数为什么要是虚函数？</strong></p>
-<p>原因：<strong>防止在析构时只析构基类而不析构派生类</strong>。如果以一个基类指针指向其派生类，删除这个基类指针只能删除基类对象部分，而不能删除派生类对象，原因是通过基类指针无法访问派生类的析构函数。但是，如果像其它虚函数一样，基类的析构函数也是虚的，那么派生类的析构函数也必然是虚的，删除基类指针时，它就会通过虚函数表找到正确的派生类析构函数并调用它，从而正确析构整个派生类对象。</p>
-<p><strong>为什么C++默认的析构函数不是虚函数</strong></p>
-<p>C++默认的析构函数不是虚函数是因为虚函数需要额外的虚函数表和虚表指针，占用额外的内存。而对于不会被继承的类来说，其析构函数如果是虚函数，就会浪费内存。因此C++默认的析构函数不是虚函数，而是只有当需要当作父类时，设置为虚函数</p>
-<p><strong>纯虚函数</strong></p>
-<p>纯虚函数是一种特殊的虚函数，在基类中不能对虚函数给出有意义的实现，而把它声明为纯虚函数，它的实现留给该基类的派生类去做。</p>
-<p>作用：为了实现一个接口，起到一个规范的作用，规定继承这个类的子类必须实现这个函数，否则不能实例化。</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="keyword">int</span> <span class="title">A</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
-
-<p><strong>虚函数、纯虚函数</strong></p>
-<ul>
-<li>类里如果声明了虚函数，这个函数是实现的，哪怕是空实现，它的作用就是为了能让这个函数在它的子类里面可以被覆盖（override），这样的话，编译器就可以使用后期绑定来达到多态了。纯虚函数只是一个接口，是个函数的声明而已，它要留到子类里去实现。</li>
-<li>虚函数在子类里面可以不重写；但纯虚函数必须在子类实现才可以实例化子类。</li>
-<li>虚函数的类用于 “实作继承”，继承接口的同时也继承了父类的实现。纯虚函数关注的是接口的统一性，实现由子类完成。</li>
-<li>带纯虚函数的类叫抽象类，这种类不能直接生成对象，而只有被继承，并重写其虚函数后，才能使用。抽象类被继承后，子类可以继续是抽象类，也可以是普通类。</li>
-<li>虚基类是虚继承中的基类</li>
-</ul>
-<p><strong>虚函数指针、虚函数表</strong></p>
-<ul>
-<li>虚函数指针：在含有虚函数类的对象中，指向虚函数表，在运行时确定。</li>
-<li>虚函数表：在程序只读数据段（<code>.rodata section</code>），存放虚函数地址，如果派生类实现了基类的某个虚函数，则在虚表中覆盖原本基类的那个虚函数地址</li>
-</ul>
-<p><strong>派生类虚表：</strong></p>
-<ol>
-<li>先将基类的虚表中的内容拷贝一份</li>
-<li>如果派生类对基类中的虚函数进行重写，使用派生类的虚函数替换相同偏移量位置的基类虚函数</li>
-<li>如果派生类中新增加自己的虚函数，按照其在派生类中的声明次序，放在上述虚函数之后</li>
-</ol>
-<p><strong>多重继承</strong></p>
-<p><strong>当一个类继承多个类，且多个基类都有虚函数时，子类对象中将包含多个虚函数表的指针</strong></p>
-<img src="/2020/10/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/Users/hqnddw/Desktop/md文件/c++面试点.assets/898333-20160609110953746-1340412428.png" alt="img" style="zoom:99%;">
-
-<ul>
-<li>A和B都没有基类，但是都有虚函数，因此各有一个虚函数指针</li>
-<li>C同时继承了A和B，因此会继承两个虚函数指针，但是为了节省空间，C会与主基类A公用一个虚函数指针（即上图中vptr1），继承自B的虚函数指针假设为vptr2。</li>
-<li>C没有重写继承自A和B的虚函数，因此在C的虚函数表中存在A::foo和B::bar函数指针（如果C中重写了foo()，则C的虚函数表中A::foo会被替换为C::foo）。</li>
-<li>C中有两个虚函数指针vptr1和vptr2，相当于有两张虚函数表</li>
-</ul>
-]]></content>
-      <categories>
-        <category>C++</category>
-      </categories>
-      <tags>
-        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
@@ -1031,48 +850,6 @@
       </tags>
   </entry>
   <entry>
-    <title>链表之快慢指针</title>
-    <url>/2020/10/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/</url>
-    <content><![CDATA[<p>链表的快慢指针指声明两个指针slow和fast，slow每次走一步，fast每次走两步</p>
-<p>几种应用到快慢指针的场景：</p>
-<p><strong>寻找链表的中点</strong></p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">ListNode *p1 = head, *p2 = head-&gt;next;</span><br><span class="line"><span class="keyword">while</span> (p2 &amp;&amp; p2-&gt;next) &#123;</span><br><span class="line">      p1 = p1-&gt;next;</span><br><span class="line">      p2 = p2-&gt;next-&gt;next;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//p1即为链表的中点</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>检测链表中是否有环</strong></p>
-<p>用两个指针slow和fast，初始化指向链表头部，slow走一步，fast走两步，如果两个指针能够相遇，说明链表中有环</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">        ListNode *fast = head;</span><br><span class="line">        ListNode *slow = head;</span><br><span class="line">        <span class="comment">//检测fast-&gt;next是否为null，是因为当fast-&gt;next为null时，fast-&gt;next-&gt;next不存在</span></span><br><span class="line">        <span class="keyword">while</span>(fast  &amp;&amp; fast -&gt; next)&#123;</span><br><span class="line">            fast = fast -&gt; next -&gt; next;</span><br><span class="line">            slow = slow -&gt; next;</span><br><span class="line">            <span class="keyword">if</span>(fast == slow)</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>检测链表中是否有环并找到环开始的节点</strong></p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">        ListNode *slow = head;</span><br><span class="line">        ListNode *fast = head;</span><br><span class="line">        <span class="keyword">while</span> (fast &amp;&amp; fast-&gt;next) &#123;</span><br><span class="line">            slow = slow-&gt;next;</span><br><span class="line">            fast = fast-&gt;next-&gt;next;</span><br><span class="line">            <span class="keyword">if</span> (slow == fast) &#123; <span class="comment">// 此时快慢指针相遇，证明链表有环</span></span><br><span class="line">                <span class="comment">// 慢指针从链表头部开始遍历</span></span><br><span class="line">                ListNode *slow2 = head;</span><br><span class="line">                <span class="keyword">while</span> (slow != slow2) &#123; <span class="comment">// 在环开始的点相遇</span></span><br><span class="line">                    slow = slow-&gt;next;</span><br><span class="line">                    slow2 = slow2-&gt;next;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> slow;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<img src="/2020/10/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/微信图片_20190829113352.jpg" alt="微信图片_20190829113352" style="zoom:50%;">
-
-<p><strong>找到两个链表的相交节点</strong></p>
-<p>两种方法：</p>
-<ul>
-<li>A, B两个链表，假设长度A&gt;B，A，B两个头节点一步步遍历，当B到达尾节点时，将B指向A的头节点，当A到达尾节点时，将A指向B的头节点，继续遍历，当两个节点相等时，即到达相交节点</li>
-</ul>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">ListNode *<span class="title">getIntersectionNode</span><span class="params">(ListNode *headA, ListNode *headB)</span> </span>&#123;</span><br><span class="line">    ListNode *ptrA = headA, *ptrB = headB;</span><br><span class="line">    <span class="keyword">while</span> (ptrA != ptrB) &#123;</span><br><span class="line">        ptrA = ptrA ? ptrA-&gt;next : headB;</span><br><span class="line">        ptrB = ptrB ? ptrB-&gt;next : headA;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ptrA;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>将A， B两个链表连接，即A+B， B+A， 从头开始分别遍历，当相等时，即到达相交节点</li>
-</ul>
-<p><strong>寻找重复数</strong></p>
-<p>给定一个包含 n + 1 个整数的数组 nums，其数字都在 1 到 n 之间（包括 1 和 n），可知至少存在一个重复的整数。假设只有一个重复的整数，找出这个重复的数</p>
-<figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line">输入: [<span class="number">1</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">2</span>,<span class="number">2</span>]</span><br><span class="line">输出: <span class="number">2</span></span><br></pre></td></tr></table></figure>
-
-<img src="/2020/10/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/image-20201005200439527.png" alt="image-20201005200439527" style="zoom:67%;">
-
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">findDuplicate</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;nums)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (nums.<span class="built_in">size</span>() &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> slow = nums[<span class="number">0</span>];</span><br><span class="line">        <span class="keyword">int</span> fast = nums[nums[<span class="number">0</span>]];</span><br><span class="line">        <span class="keyword">while</span> (slow != fast) &#123;</span><br><span class="line">            slow = nums[slow];</span><br><span class="line">            fast = nums[nums[fast]];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        fast = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (fast != slow) &#123;</span><br><span class="line">            fast = nums[fast];</span><br><span class="line">            slow = nums[slow];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> slow;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
-      <categories>
-        <category>数据结构与算法</category>
-      </categories>
-      <tags>
-        <tag>数据结构与算法</tag>
-        <tag>链表</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Redis对象</title>
     <url>/2020/10/05/Redis%E5%AF%B9%E8%B1%A1/</url>
     <content><![CDATA[<h3 id="对象"><a href="#对象" class="headerlink" title="对象"></a>对象</h3><p>Redis并没有直接SDS、双端链表、字典、压缩列表、整数集合等数据结构来实现键值对数据库，而是基于这些数据结构创建了一个对象系统，这个系统包含字符串对象、列表对象、哈希对象、集合对象和有序集合对象这五种类型的对象，每种对象都用到了至少一种我们之前介绍的数据结构</p>
@@ -1351,6 +1128,61 @@
 <li>有序集合保存的所有元素成员的长度都小于 <code>64</code> 字节；</li>
 </ol>
 <p>不能满足以上两个条件的有序集合对象将使用 <code>skiplist</code> 编码。</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis过期键删除策略</title>
+    <url>/2020/10/02/%E8%BF%87%E6%9C%9F%E9%94%AE%E5%88%A0%E9%99%A4%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<h3 id="过期键的删除策略"><a href="#过期键的删除策略" class="headerlink" title="过期键的删除策略"></a>过期键的删除策略</h3><ol>
+<li><p><strong>定时删除</strong>：在设置键的过期时间的同时，创建一个定时器，让定时器在键的过期时间来临时，立即删除对键的删除操作</p>
+<p>主动删除，对内存友好，对cpu不友好</p>
+</li>
+<li><p><strong>惰性删除</strong>：放任键过期不管，但每次从键空间中获取键时，都检查取得的键是否过期，如果过期的话，就删除该键。如果没有过期，就返回该键</p>
+<p>被动删除，对cpu友好，对内存不友好</p>
+</li>
+<li><p><strong>定期删除</strong>：是前两种删除策略的一种折中。会每隔一段时间执行一次删除过期键操作，并通过限制操作执行的时长和频率来减少删除操作对cpu时间的影响</p>
+<p>难点是确定删除策略的时长和频率</p>
+</li>
+</ol>
+<h3 id="Redis过期键删除策略"><a href="#Redis过期键删除策略" class="headerlink" title="Redis过期键删除策略"></a>Redis过期键删除策略</h3><p>Redis服务器实际使用的是<strong>惰性删除和定期删除</strong>两种策略：通过配合使用这两种删除策略，服务器可以很好地在合理使用CPU时间和避免浪费内存空间之间取得平衡。</p>
+<h4 id="惰性删除策略的实现"><a href="#惰性删除策略的实现" class="headerlink" title="惰性删除策略的实现"></a>惰性删除策略的实现</h4><p>过期键的惰性删除策略由<code>db.c/expireIfNeeded</code>函数实现，所有读写数据库的Redis命令在执行之前都会调用expireIfNeeded函数对输入键进行检查：</p>
+<ul>
+<li>如果输入键已经过期，那么expireIfNeeded函数将输入键从数据库中删除。</li>
+<li>如果输入键未过期，那么expireIfNeeded函数不做动作</li>
+</ul>
+<img src="/2020/10/02/%E8%BF%87%E6%9C%9F%E9%94%AE%E5%88%A0%E9%99%A4%E7%AD%96%E7%95%A5/4633437-bc63f95d1c8b6114.png" alt="img" style="zoom:90%;">
+
+<h4 id="定期删除键的策略实现"><a href="#定期删除键的策略实现" class="headerlink" title="定期删除键的策略实现"></a>定期删除键的策略实现</h4><p>过期键的定期删除策略由 <code>redis.c/activeExpireCycle</code>函数实现，每当 Redis 的服务器周期性操作 <code>redis.c/serverCron</code> 函数执行时， activeExpireCycle 函数就会被调用，它在规定的时间内分多次遍历服务器的各个数据库，检查数据库的 expires 字典中部分键(相当于分页查询)的过期时间，并删除它。步骤如下：</p>
+<ol>
+<li>函数每次运行时，都从一定数量的数据库取出一定数量的随机键进行检查，并删除其中的过期键。</li>
+<li>全局变量 current_db 会记录当前 activeExpireCycle 函数的检查进度，并在下一次 activeExpireCycle 调用时，接着上一次的进度进行处理。</li>
+<li>随着 activeExpireCycle 函数的不断执行，服务器中的所有数据库都会被检查一遍，当到达最后时，把 current_db 设置为 0，然后又重新开始，如此循环下去。</li>
+</ol>
+<hr>
+<h3 id="RDB、AOF和复制功能对过期键的处理"><a href="#RDB、AOF和复制功能对过期键的处理" class="headerlink" title="RDB、AOF和复制功能对过期键的处理"></a>RDB、AOF和复制功能对过期键的处理</h3><h4 id="生成RDB文件"><a href="#生成RDB文件" class="headerlink" title="生成RDB文件"></a>生成RDB文件</h4><p>在执行SAVE命令和BGSAVE命令创建一个RDB文件时，程序会对数据库中的键进行检查，已过期的键不会保存到新创建的RDB文件中</p>
+<h4 id="载入RDB文件"><a href="#载入RDB文件" class="headerlink" title="载入RDB文件"></a>载入RDB文件</h4><p>在启动Redis服务器时，如果服务器开启了RDB功能，那么服务器将对RDB文件进行载入</p>
+<ul>
+<li>如果<strong>服务器以主服务器模式</strong>运行，那么在载入RDB文件时，程序会对文件中保存的键进行检查，<strong>未过期的键会被载入到数据库中，而过期键则会被忽略</strong>，所以过期键对载入RDB文 件的主服务器不会造成影响</li>
+<li>如果<strong>服务器以从服务器模式</strong>运行，那么在载入RDB文件时，文件中保存的所有键，<strong>不论是否过期，都会被载入到数据库中</strong></li>
+</ul>
+<hr>
+<h4 id="AOF文件写入"><a href="#AOF文件写入" class="headerlink" title="AOF文件写入"></a>AOF文件写入</h4><p>当服务器以AOF持久化模式运行时，如果数据库中的某个键已经过期，但它还没有被惰性删除或者定期删除，那么<strong>AOF文件不会因为这个过期键而产生任何影响</strong></p>
+<p>当过期键被惰性删除或者定期删除之后，程序会<strong>向AOF文件追加（append）一条DEL命令</strong>，来显式地记录该键已被删除</p>
+<h4 id="AOF重写"><a href="#AOF重写" class="headerlink" title="AOF重写"></a>AOF重写</h4><p>和生成RDB文件时类似，在执行AOF重写的过程中，程序会对数据库中的键进行检查， <strong>已过期的键不会被保存到重写后的AOF文件中</strong></p>
+<hr>
+<h4 id="复制与过期键的关系"><a href="#复制与过期键的关系" class="headerlink" title="复制与过期键的关系"></a>复制与过期键的关系</h4><p>当服务器运行在复制模式下时，从服务器的过期键删除动作由主服务器控制:</p>
+<ul>
+<li>主服务器在删除一个过期键之后，会<strong>显式地向所有从服务器发送一个DEL命令</strong>，告知从服务器删除这个过期键</li>
+<li>从服务器在执行客户端发送的读命令时，即使碰到过期键也不会将过期键删除，而是继续像处理未过期的键一样来处理过期键</li>
+<li>从服务器<strong>只有在接到主服务器发来的DEL命令之后</strong>，才会删除过期键</li>
+</ul>
+<p>通过由主服务器来控制从服务器统一地删除过期键，可以<strong>保证主从服务器数据的一致性</strong></p>
 ]]></content>
       <categories>
         <category>Redis</category>
@@ -1712,6 +1544,207 @@
       </tags>
   </entry>
   <entry>
+    <title>order by是怎么工作的</title>
+    <url>/2020/09/27/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/</url>
+    <content><![CDATA[<p>假设你要查询城市是“杭州”的所有人名字，并且按照<strong>姓名排序</strong>返回前1000个人的姓名、年龄。</p>
+<p>假设这个表的部分定义是这样的：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`t`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`city`</span> <span class="built_in">varchar</span>(<span class="number">16</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`name`</span> <span class="built_in">varchar</span>(<span class="number">16</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`age`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="string">`addr`</span> <span class="built_in">varchar</span>(<span class="number">128</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span>,</span><br><span class="line">  PRIMARY <span class="keyword">KEY</span> (<span class="string">`id`</span>),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="string">`city`</span> (<span class="string">`city`</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这时，你的SQL语句可以这么写：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> city,<span class="keyword">name</span>,age <span class="keyword">from</span> t <span class="keyword">where</span> city=<span class="string">'杭州'</span> <span class="keyword">order</span> <span class="keyword">by</span> <span class="keyword">name</span> <span class="keyword">limit</span> <span class="number">1000</span>;</span><br></pre></td></tr></table></figure>
+
+<p>下面讲解这个语句的执行流程。</p>
+<p><strong>全字段排序</strong></p>
+<p>为避免全表扫描，我们需要在city字段加上索引</p>
+<img src="/2020/09/27/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/image-20200716172934243.png" alt="image-20200716172934243" style="zoom:40%;">
+
+<p>从图中可以看到，满足city=’杭州’条件的行，是从ID_X到ID_(X+N)的这些记录。</p>
+<p>通常情况下，这个语句执行流程如下所示 ：</p>
+<ol>
+<li>初始化<strong>sort_buffer</strong>，确定放入name、city、age这三个字段；</li>
+<li>从索引city找到第一个满足city=’杭州’条件的主键id，也就是图中的ID_X；</li>
+<li>到主键id索引取出整行，取name、city、age三个字段的值，存入sort_buffer中；</li>
+<li>从索引city取下一个记录的主键id；</li>
+<li>重复步骤3、4直到city的值不满足查询条件为止，对应的主键id也就是图中的ID_Y；</li>
+<li>对sort_buffer中的数据按照字段name做快速排序；</li>
+<li>按照排序结果取前1000行返回给客户端。</li>
+</ol>
+<p>我们暂且把这个排序过程，称为全字段排序，执行流程的示意图如下所示</p>
+<img src="/2020/09/27/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/image-20200716173046109.png" alt="image-20200716173046109" style="zoom: 45%;">
+
+<p>图中“按name排序”这个动作，可能在内存中完成，也可能需要使用外部排序，这取决于排序所需的内存和参数sort_buffer_size。</p>
+<p>sort_buffer_size，就是MySQL为排序开辟的内存（sort_buffer）的大小。如果要排序的数据量小于sort_buffer_size，排序就在内存中完成。但如果排序数据量太大，内存放不下，则不得不利用磁盘临时文件辅助排序。</p>
+<p><strong>rowid排序</strong></p>
+<p>在上面这个算法过程里面，只对原表的数据读了一遍，剩下的操作都是在sort_buffer和临时文件中执行的。但这个算法有一个问题，就是如果查询要返回的字段很多的话，那么sort_buffer里面要放的字段数太多，这样内存里能够同时放下的行数很少，要分成很多个临时文件，排序的性能会很差。</p>
+<p>max_length_for_sort_data，是MySQL中专门控制用于排序的行数据的长度的一个参数。它的意思是，如果单行的长度超过这个值，MySQL就认为单行太大，要换一个算法</p>
+<p>新的算法放入sort_buffer的字段，只有要<strong>排序的列（即name字段</strong>）和<strong>主键id</strong>。</p>
+<p>但这时，排序的结果就因为少了city和age字段的值，不能直接返回了，整个执行流程就变成如下所示的样子：</p>
+<ol>
+<li>初始化sort_buffer，确定放入两个字段，即name和id；</li>
+<li>从索引city找到第一个满足city=’杭州’条件的主键id，也就是图中的ID_X；</li>
+<li>到主键id索引取出整行，取name、id这两个字段，存入sort_buffer中；</li>
+<li>从索引city取下一个记录的主键id；</li>
+<li>重复步骤3、4直到不满足city=’杭州’条件为止，也就是图中的ID_Y；</li>
+<li>对sort_buffer中的数据按照字段name进行排序；</li>
+<li>遍历排序结果，取前1000行，并按照id的值回到原表中取出city、name和age三个字段返回给客户端。</li>
+</ol>
+<p>这个执行流程的示意图如下，我把它称为rowid排序。</p>
+<img src="/2020/09/27/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/image-20200716173352103.png" alt="image-20200716173352103" style="zoom:45%;">
+
+<p>rowid排序多访问了一次表t的主键索引，就是步骤7。需要说明的是，最后的“结果集”是一个逻辑概念，实际上MySQL服务端从排序后的sort_buffer中依次取出id，然后到原表查到city、name和age这三个字段的结果，不需要在服务端再耗费内存存储结果，是直接返回给客户端的。</p>
+<p><strong>全字段排序 VS rowid排序</strong></p>
+<p>如果MySQL实在是担心排序内存太小，会影响排序效率，才会采用rowid排序算法，这样排序过程中一次可以排序更多行，但是需要再回到原表去取数据。</p>
+<p>如果MySQL认为内存足够大，会优先选择全字段排序，把需要的字段都放到sort_buffer中，这样排序后就会直接从内存里面返回查询结果了，不用再回到原表去取数据。</p>
+<p>这也就体现了MySQL的一个设计思想：<strong>如果内存够，就要多利用内存，尽量减少磁盘访问。</strong></p>
+<p>对于InnoDB表来说，rowid排序会要求回表多造成磁盘读，因此不会被优先选择。</p>
+<p><strong>其实，并不是所有的order by语句，都需要排序操作的。</strong>你可以设想下，如果能够保证从city这个索引上取出来的行，天然就是按照name递增排序的话，是不是就可以不用再排序了呢？</p>
+<p>所以，我们可以在这个市民表上创建一个city和name的联合索引，对应的SQL语句是</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t <span class="keyword">add</span> <span class="keyword">index</span> city_user(city, <span class="keyword">name</span>);</span><br></pre></td></tr></table></figure>
+
+<p>作为与city索引的对比，我们来看看这个索引的示意图。</p>
+<img src="/2020/09/27/order%20by%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84/image-20200716173702334.png" alt="image-20200716173702334" style="zoom:45%;">
+
+<p>这样整个查询过程的流程就变成了：</p>
+<ol>
+<li>从索引(city,name)找到第一个满足city=’杭州’条件的主键id；</li>
+<li>到主键id索引取出整行，取name、city、age三个字段的值，作为结果集的一部分直接返回；</li>
+<li>从索引(city,name)取下一个记录主键id；</li>
+<li>重复步骤2、3，直到查到第1000条记录，或者是不满足city=’杭州’条件时循环结束</li>
+</ol>
+<p><strong>这个语句的执行流程有没有可能进一步简化呢？</strong></p>
+<p><strong>覆盖索引是指，索引上的信息足够满足查询请求，不需要再回到主键索引上去取数据。</strong>按照覆盖索引的概念，我们可以再优化一下这个查询语句的执行流程。</p>
+<p>针对这个查询，我们可以创建一个city、name和age的联合索引，对应的SQL语句就是：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t <span class="keyword">add</span> <span class="keyword">index</span> city_user_age(city, <span class="keyword">name</span>, age);</span><br></pre></td></tr></table></figure>
+
+<p>这时，对于city字段的值相同的行来说，还是按照name字段的值递增排序的，此时的查询语句也就不再需要排序了。这样整个查询语句的执行流程就变成了：</p>
+<ol>
+<li>从索引(city,name,age)找到第一个满足city=’杭州’条件的记录，取出其中的city、name和age这三个字段的值，作为结果集的一部分直接返回；</li>
+<li>从索引(city,name,age)取下一个记录，同样取出这三个字段的值，作为结果集的一部分直接返回；</li>
+<li>重复执行步骤2，直到查到第1000条记录，或者是不满足city=’杭州’条件时循环结束。</li>
+</ol>
+<hr>
+<ol>
+<li>无条件查询如果只有order by create_time,<strong>即便create_time上有索引,也不会使用到。</strong><br>因为优化器认为走二级索引再去回表成本比全表扫描排序更高。所以选择走全表扫描,</li>
+<li>无条件查询但是是order by create_time limit m.<strong>如果m值较小,是可以走索引的.</strong><br>因为优化器认为根据索引有序性去回表查数据，然后得到m条数据,就可以终止循环，那么成本比全表扫描小，则选择走二级索引。即便没有二级索引，<strong>mysql针对order by limit也做了优化，采用堆排序</strong></li>
+<li>如果是group by a，a上不能使用索引的情况，是走rowid排序。</li>
+<li>如果是group by limit，不能使用索引的情况，是走堆排序</li>
+<li>select * from t group by a –走的是索引全扫描</li>
+<li>select a from t group by a –走的是索引松散扫描，也就说只需要扫描每组的第一行数据即可，不用扫描每一行的值</li>
+</ol>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>数据库</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>链表之快慢指针</title>
+    <url>/2020/08/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/</url>
+    <content><![CDATA[<p>链表的快慢指针指声明两个指针slow和fast，slow每次走一步，fast每次走两步</p>
+<p>几种应用到快慢指针的场景：</p>
+<p><strong>寻找链表的中点</strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">ListNode *p1 = head, *p2 = head-&gt;next;</span><br><span class="line"><span class="keyword">while</span> (p2 &amp;&amp; p2-&gt;next) &#123;</span><br><span class="line">      p1 = p1-&gt;next;</span><br><span class="line">      p2 = p2-&gt;next-&gt;next;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//p1即为链表的中点</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>检测链表中是否有环</strong></p>
+<p>用两个指针slow和fast，初始化指向链表头部，slow走一步，fast走两步，如果两个指针能够相遇，说明链表中有环</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">hasCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">        ListNode *fast = head;</span><br><span class="line">        ListNode *slow = head;</span><br><span class="line">        <span class="comment">//检测fast-&gt;next是否为null，是因为当fast-&gt;next为null时，fast-&gt;next-&gt;next不存在</span></span><br><span class="line">        <span class="keyword">while</span>(fast  &amp;&amp; fast -&gt; next)&#123;</span><br><span class="line">            fast = fast -&gt; next -&gt; next;</span><br><span class="line">            slow = slow -&gt; next;</span><br><span class="line">            <span class="keyword">if</span>(fast == slow)</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>检测链表中是否有环并找到环开始的节点</strong></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">ListNode *<span class="title">detectCycle</span><span class="params">(ListNode *head)</span> </span>&#123;</span><br><span class="line">        ListNode *slow = head;</span><br><span class="line">        ListNode *fast = head;</span><br><span class="line">        <span class="keyword">while</span> (fast &amp;&amp; fast-&gt;next) &#123;</span><br><span class="line">            slow = slow-&gt;next;</span><br><span class="line">            fast = fast-&gt;next-&gt;next;</span><br><span class="line">            <span class="keyword">if</span> (slow == fast) &#123; <span class="comment">// 此时快慢指针相遇，证明链表有环</span></span><br><span class="line">                <span class="comment">// 慢指针从链表头部开始遍历</span></span><br><span class="line">                ListNode *slow2 = head;</span><br><span class="line">                <span class="keyword">while</span> (slow != slow2) &#123; <span class="comment">// 在环开始的点相遇</span></span><br><span class="line">                    slow = slow-&gt;next;</span><br><span class="line">                    slow2 = slow2-&gt;next;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">return</span> slow;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<img src="/2020/08/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/微信图片_20190829113352.jpg" alt="微信图片_20190829113352" style="zoom:50%;">
+
+<p><strong>找到两个链表的相交节点</strong></p>
+<p>两种方法：</p>
+<ul>
+<li>A, B两个链表，假设长度A&gt;B，A，B两个头节点一步步遍历，当B到达尾节点时，将B指向A的头节点，当A到达尾节点时，将A指向B的头节点，继续遍历，当两个节点相等时，即到达相交节点</li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">ListNode *<span class="title">getIntersectionNode</span><span class="params">(ListNode *headA, ListNode *headB)</span> </span>&#123;</span><br><span class="line">    ListNode *ptrA = headA, *ptrB = headB;</span><br><span class="line">    <span class="keyword">while</span> (ptrA != ptrB) &#123;</span><br><span class="line">        ptrA = ptrA ? ptrA-&gt;next : headB;</span><br><span class="line">        ptrB = ptrB ? ptrB-&gt;next : headA;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ptrA;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>将A， B两个链表连接，即A+B， B+A， 从头开始分别遍历，当相等时，即到达相交节点</li>
+</ul>
+<p><strong>寻找重复数</strong></p>
+<p>给定一个包含 n + 1 个整数的数组 nums，其数字都在 1 到 n 之间（包括 1 和 n），可知至少存在一个重复的整数。假设只有一个重复的整数，找出这个重复的数</p>
+<figure class="highlight angelscript"><table><tr><td class="code"><pre><span class="line">输入: [<span class="number">1</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">2</span>,<span class="number">2</span>]</span><br><span class="line">输出: <span class="number">2</span></span><br></pre></td></tr></table></figure>
+
+<img src="/2020/08/05/%E9%93%BE%E8%A1%A8%E4%B9%8B%E5%BF%AB%E6%85%A2%E6%8C%87%E9%92%88/image-20201005200439527.png" alt="image-20201005200439527" style="zoom:67%;">
+
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">findDuplicate</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; &amp;nums)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (nums.<span class="built_in">size</span>() &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> slow = nums[<span class="number">0</span>];</span><br><span class="line">        <span class="keyword">int</span> fast = nums[nums[<span class="number">0</span>]];</span><br><span class="line">        <span class="keyword">while</span> (slow != fast) &#123;</span><br><span class="line">            slow = nums[slow];</span><br><span class="line">            fast = nums[nums[fast]];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        fast = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> (fast != slow) &#123;</span><br><span class="line">            fast = nums[fast];</span><br><span class="line">            slow = nums[slow];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> slow;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>数据结构与算法</category>
+      </categories>
+      <tags>
+        <tag>数据结构与算法</tag>
+        <tag>链表</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>fork, vfork, 写时复制</title>
+    <url>/2020/06/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/</url>
+    <content><![CDATA[<h3 id="fork"><a href="#fork" class="headerlink" title="fork"></a>fork</h3><p>fork调用一次，返回两次，子进程的返回值为0，父进程的返回值为子进程的pid</p>
+<p>子进程是父进程的副本。子进程获得父进程<strong>数据空间、堆和栈</strong>的<strong>副本</strong>。注意，这是子进程所拥有的的副本，父进程和子进程并不共享这些存储空间部分。父进程和子进程<strong>共享正文段</strong>。（fork也会复制父进程缓冲区的数据到子进程的缓冲区。父进程和子进程每个相同的打开文件描述符共享同一文件表项，父进程和子进程也共享同一文件的偏移量）</p>
+<img src="/2020/06/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013407086.png" alt="image-20200728013407086" style="zoom:45%;">
+
+<p><strong>fork出错的原因：</strong></p>
+<ul>
+<li>当前的进程数已经达到了系统规定的上限，这时errno的值被设置为EAGAIN。</li>
+<li>系统内存不足，这时errno的值被设置为ENOMEM。</li>
+</ul>
+<h3 id="写时复制"><a href="#写时复制" class="headerlink" title="写时复制"></a>写时复制</h3><p>内核只为新生成的子进程创建虚拟空间结构，它们来复制于父进程的虚拟空间结构，但是不为这些段分配物理内存，它们共享父进程的物理空间，当父子进程中有更改相应段的行为发生时，再为子进程相应的段分配物理空间</p>
+<img src="/2020/06/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013607556.png" alt="image-20200728013607556" style="zoom:45%;">
+
+<h3 id="vfork"><a href="#vfork" class="headerlink" title="vfork()"></a><strong>vfork()</strong></h3><p>内核连子进程的虚拟地址空间结构也不创建了，直接共享了父进程的虚拟空间，当然了，这种做法就顺水推舟的共享了父进程的物理空间</p>
+<img src="/2020/06/07/fork,%20vfork,%20%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/image-20200728013657849.png" alt="image-20200728013657849" style="zoom:45%;">
+
+<p>fork和vfork的区别：</p>
+<ul>
+<li>fork ()：子进程拷贝父进程的数据段，代码段 ；vfork ()：子进程与父进程共享数据段 </li>
+<li>fork ()：父子进程的执行次序不确定；vfork 保证子进程先运行，在它调用exec或exit 之后父进程才可能被调度运行。 如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则会导致死锁。 </li>
+</ul>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>fork</tag>
+        <tag>操作系统</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>单例模式</title>
+    <url>/2020/04/07/%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<h3 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h3><p>单例模式作为最常用的设计模式之一，保证一个类仅有一个实例，并提供一个访问它的全局访问点，该实例被所有程序模块共享。</p>
+<p>实现思路：私有化它的构造函数，以防止外界创建单例类的对象；使用类的私有静态指针变量指向类的唯一实例，并用一个公有的静态方法获取该实例。</p>
+<p>单例模式有两种实现方法，分别是懒汉和饿汉模式。顾名思义，懒汉模式，即非常懒，不用的时候不去初始化，所以在第一次被使用时才进行初始化；饿汉模式，即迫不及待，在程序运行时立即初始化。</p>
+<h3 id="经典的线程安全懒汉模式"><a href="#经典的线程安全懒汉模式" class="headerlink" title="经典的线程安全懒汉模式"></a><strong>经典的线程安全懒汉模式</strong></h3><p>单例模式的实现思路如前述所示，其中，经典的线程安全懒汉模式，<strong>使用双检测锁模式</strong>。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">single</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> single *p;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">std</span>::mutex <span class="keyword">mutex_t</span>;</span><br><span class="line"></span><br><span class="line">    single() &#123;&#125;</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> single *<span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (p == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">            <span class="built_in">std</span>::lock_guard&lt;<span class="built_in">std</span>::mutex&gt; lock(<span class="keyword">mutex_t</span>);</span><br><span class="line">            <span class="keyword">if</span> (p == <span class="literal">nullptr</span>) &#123;</span><br><span class="line">                p = <span class="keyword">new</span> single;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> p;</span><br><span class="line">    &#125;</span><br><span class="line">    ~single()&#123;</span><br><span class="line">        <span class="keyword">delete</span> p;</span><br><span class="line">        p = <span class="literal">nullptr</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">single *single::p = <span class="literal">nullptr</span>;</span><br><span class="line"><span class="built_in">std</span>::mutex single::<span class="keyword">mutex_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    single *s1 = single::getInstance();</span><br><span class="line">    single *s2 = single::getInstance();</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; s1 &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; s2 &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>为什么要用双检测，只检测一次不行吗？</code></strong></p>
+<p>如果只检测一次，在每次调用获取实例的方法时，都需要加锁，这将严重影响程序性能。双层检测可以有效避免这种情况，仅在第一次创建单例的时候加锁，其他时候都不再符合NULL == p的情况，直接返回已创建好的实例。</p>
+<hr>
+<h3 id="局部静态变量之线程安全懒汉模式"><a href="#局部静态变量之线程安全懒汉模式" class="headerlink" title="局部静态变量之线程安全懒汉模式"></a><strong>局部静态变量之线程安全懒汉模式</strong></h3><p>前面的双检测锁模式，写起来不太优雅，《Effective C++》（Item 04）中的提出另一种更优雅的单例模式实现，使用函数内的局部静态对象，这种方法不用加锁和解锁操作。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">single</span>&#123;</span></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">     single()&#123;&#125;</span><br><span class="line">     ~single()&#123;&#125;</span><br><span class="line"> </span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">     <span class="function"><span class="keyword">static</span> single* <span class="title">getinstance</span><span class="params">()</span></span>;</span><br><span class="line"> </span><br><span class="line"> &#125;;</span><br><span class="line"></span><br><span class="line">single* single::getinstance()&#123;</span><br><span class="line">    <span class="keyword">static</span> single obj;</span><br><span class="line">    <span class="keyword">return</span> &amp;obj;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实，C++0X以后，要求编译器保证内部静态变量的线程安全性，故C++0x之后该实现是线程安全的，C++0x之前仍需加锁，其中C++0x是C++11标准成为正式标准之前的草案临时名字。</p>
+<hr>
+<h3 id="饿汉模式"><a href="#饿汉模式" class="headerlink" title="饿汉模式"></a><strong>饿汉模式</strong></h3><p>饿汉模式不需要用锁，就可以实现线程安全。原因在于，在程序运行时就定义了对象，并对其初始化。之后，不管哪个线程调用成员函数getinstance()，都只不过是返回一个对象的指针而已。所以是线程安全的，不需要在获取实例的成员函数中加锁。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">single</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> single *p;</span><br><span class="line">    single() &#123;&#125;</span><br><span class="line">    ~single() &#123;&#125;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> single *<span class="title">getinstance</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">single *single::p = <span class="keyword">new</span> single();</span><br><span class="line">single *single::getinstance() &#123;</span><br><span class="line">    <span class="keyword">return</span> p;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//测试方法</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    single *p1 = single::getinstance();</span><br><span class="line">    single *p2 = single::getinstance();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (p1 == p2)</span><br><span class="line">    	<span class="built_in">cout</span> &lt;&lt; <span class="string">"same"</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">    system(<span class="string">"pause"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>饿汉模式虽好，但其存在隐藏的问题，在于非静态对象（函数外的static对象）在不同编译单元中的初始化顺序是未定义的。如果在初始化完成之前调用 getInstance() 方法会返回一个未定义的实例。</p>
+]]></content>
+      <categories>
+        <category>设计模式</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+        <tag>设计模式</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MySQL数据库缓冲池</title>
     <url>/2020/03/20/MySQL%E6%95%B0%E6%8D%AE%E5%BA%93%E7%BC%93%E5%86%B2%E6%B1%A0/</url>
     <content><![CDATA[<p>应用系统分层架构，为了加速数据访问，会把最常访问的数据，放在<strong>缓存</strong>(cache)里，避免每次都去访问数据库。操作系统会有<strong>缓冲池</strong>(buffer pool)机制，避免每次都访问磁盘，以加速数据的访问。MySQL作为一个存储系统，同样具有<strong>缓冲池</strong>(buffer pool)机制，以避免每次查询数据都进行磁盘IO</p>
@@ -1829,6 +1862,104 @@
       </tags>
   </entry>
   <entry>
+    <title>C++之多态</title>
+    <url>/2020/03/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/</url>
+    <content><![CDATA[<p>多态，即多种状态（形态）。简单的来说，我们可以将多态定义为消息以多种形式显示的能力。<strong><strong>同一操作作用于不同的对象，可以有不同的解释，产生不同的执行结果，这就是多态性</strong></strong>。用父类型别的指针指向其子类的实例，然后通过父类的指针调用实际子类的成员函数。这种技术可以让父类的指针有“多种形态”</p>
+<h3 id="C-多态分类及实现"><a href="#C-多态分类及实现" class="headerlink" title="C++ 多态分类及实现"></a>C++ 多态分类及实现</h3><img src="/2020/03/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/inheritance.png" alt="img" style="zoom: 80%;">
+
+
+
+<ul>
+<li><p>应用形式上：静多态是发散式的，让相同的实现代码应用于不同的场合。动多态是收敛式的，让不同的实现代码应用于相同的场合。</p>
+</li>
+<li><p>思维方式上：静多态是泛型式编程风格，它看重的是算法的普适性；动多态是对象式编程风格，它看重的是接口和实现的分离度。</p>
+</li>
+</ul>
+<h3 id="静态多态"><a href="#静态多态" class="headerlink" title="静态多态"></a><strong>静态多态</strong></h3><p>静态多态是编译器在编译期间完成的，编译器会根据实参类型来选择调用合适的函数，如果有合适的函数可以调用就调，没有的话就会发出警告或者报错</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">A</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">do</span><span class="params">(<span class="keyword">int</span> a)</span></span>;  <span class="comment">//函数重载的返回值可以不同</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">do</span><span class="params">(<span class="keyword">int</span> a, <span class="keyword">int</span> b)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="动态多态"><a href="#动态多态" class="headerlink" title="动态多态"></a>动态多态</h3><img src="/2020/03/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/image-20201006193658514.png" alt="image-20201006193658514" style="zoom:80%;">
+
+<p>动态多态是在<strong>程序运行时</strong>根据基类的引用（指针）指向的对象来确定自己具体该调用哪一个类的虚函数。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Shape</span>                     // 形状类</span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">double</span> <span class="title">calcArea</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">virtual</span> ~Shape();</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Circle</span> :</span> <span class="keyword">public</span> Shape     <span class="comment">// 圆形类</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">double</span> <span class="title">calcArea</span><span class="params">()</span></span>;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Rect</span> :</span> <span class="keyword">public</span> Shape       <span class="comment">// 矩形类</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">virtual</span> <span class="keyword">double</span> <span class="title">calcArea</span><span class="params">()</span></span>;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Shape * shape1 = <span class="keyword">new</span> Circle(<span class="number">4.0</span>);</span><br><span class="line">    Shape * shape2 = <span class="keyword">new</span> Rect(<span class="number">5.0</span>, <span class="number">6.0</span>);</span><br><span class="line">    shape1-&gt;calcArea();         <span class="comment">// 调用圆形类里面的方法</span></span><br><span class="line">    shape2-&gt;calcArea();         <span class="comment">// 调用矩形类里面的方法</span></span><br><span class="line">    <span class="keyword">delete</span> shape1;</span><br><span class="line">    shape1 = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">delete</span> shape2;</span><br><span class="line">    shape2 = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>动态多态的条件：</strong></p>
+<ul>
+<li>基类中必须包含虚函数，并且派生类中一定要对基类中的虚函数进行<strong>重写</strong>。</li>
+<li>通过基类对象的指针或者引用调用虚函数。</li>
+</ul>
+<p><strong>多态有什么好处</strong></p>
+<ol>
+<li>应用程序不必为每一个派生类编写功能调用，只需要对抽象基类进行重写即可。提高程序的<strong>可复用性</strong></li>
+<li>派生类的功能可以被基类对象的指针或引用所调用，提高了<strong>可扩充性</strong>和<strong>可维护性</strong></li>
+</ol>
+<p><strong>虚函数</strong></p>
+<ul>
+<li><p>如果在基类中定义了虚函数，派生类中的同名函数将自动变为虚函数</p>
+</li>
+<li><p>如果派生类中重新定义了基类中的虚函数，这样程序就会根据对象类型而不是引用或指针的类型来选择方法</p>
+<p><strong>注意：</strong></p>
+<ul>
+<li><p>普通函数（非类成员函数）不能是虚函数</p>
+</li>
+<li><p>静态成员函数不可以是虚函数。虚函数依靠vptr和vtable来处理。vptr是一个指针，在类的构造函数中创建生成，并且只能用this指针来访问它，因为它是类的一个成员，并且vptr指向保存虚函数地址的vtable.对于静态成员函数，它没有this指针，所以无法访问vptr. 这就是为何static函数不能为virtual.</p>
+<p><strong>虚函数的调用关系：this -&gt; vptr -&gt; vtable -&gt;virtual function</strong></p>
+</li>
+<li><p>构造函数无法是虚函数，因为调用虚函数需要虚函数表指针，而在执行构造函数之前是没有虚函数表指针的。</p>
+</li>
+<li><p>内联函数是在编译阶段进行展开，inline关键字作为提示符告诉编译器此函数作为内联函数希望在编译阶段展开，但是，编译器并不一定要展开。所以可以声明为<strong>inline虚析构函数</strong></p>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>虚析构函数是为了解决基类的指针指向派生类对象，并用基类的指针删除派生类对象</strong>。</p>
+<p><strong>基类的析构函数为什么要是虚函数？</strong></p>
+<p>原因：<strong>防止在析构时只析构基类而不析构派生类</strong>。如果以一个基类指针指向其派生类，删除这个基类指针只能删除基类对象部分，而不能删除派生类对象，原因是通过基类指针无法访问派生类的析构函数。但是，如果像其它虚函数一样，基类的析构函数也是虚的，那么派生类的析构函数也必然是虚的，删除基类指针时，它就会通过虚函数表找到正确的派生类析构函数并调用它，从而正确析构整个派生类对象。</p>
+<p><strong>为什么C++默认的析构函数不是虚函数</strong></p>
+<p>C++默认的析构函数不是虚函数是因为虚函数需要额外的虚函数表和虚表指针，占用额外的内存。而对于不会被继承的类来说，其析构函数如果是虚函数，就会浪费内存。因此C++默认的析构函数不是虚函数，而是只有当需要当作父类时，设置为虚函数</p>
+<p><strong>纯虚函数</strong></p>
+<p>纯虚函数是一种特殊的虚函数，在基类中不能对虚函数给出有意义的实现，而把它声明为纯虚函数，它的实现留给该基类的派生类去做。</p>
+<p>作用：为了实现一个接口，起到一个规范的作用，规定继承这个类的子类必须实现这个函数，否则不能实例化。</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="keyword">int</span> <span class="title">A</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>虚函数、纯虚函数</strong></p>
+<ul>
+<li>类里如果声明了虚函数，这个函数是实现的，哪怕是空实现，它的作用就是为了能让这个函数在它的子类里面可以被覆盖（override），这样的话，编译器就可以使用后期绑定来达到多态了。纯虚函数只是一个接口，是个函数的声明而已，它要留到子类里去实现。</li>
+<li>虚函数在子类里面可以不重写；但纯虚函数必须在子类实现才可以实例化子类。</li>
+<li>虚函数的类用于 “实作继承”，继承接口的同时也继承了父类的实现。纯虚函数关注的是接口的统一性，实现由子类完成。</li>
+<li>带纯虚函数的类叫抽象类，这种类不能直接生成对象，而只有被继承，并重写其虚函数后，才能使用。抽象类被继承后，子类可以继续是抽象类，也可以是普通类。</li>
+<li>虚基类是虚继承中的基类</li>
+</ul>
+<p><strong>虚函数指针、虚函数表</strong></p>
+<ul>
+<li>虚函数指针：在含有虚函数类的对象中，指向虚函数表，在运行时确定。</li>
+<li>虚函数表：在程序只读数据段（<code>.rodata section</code>），存放虚函数地址，如果派生类实现了基类的某个虚函数，则在虚表中覆盖原本基类的那个虚函数地址</li>
+</ul>
+<p><strong>派生类虚表：</strong></p>
+<ol>
+<li>先将基类的虚表中的内容拷贝一份</li>
+<li>如果派生类对基类中的虚函数进行重写，使用派生类的虚函数替换相同偏移量位置的基类虚函数</li>
+<li>如果派生类中新增加自己的虚函数，按照其在派生类中的声明次序，放在上述虚函数之后</li>
+</ol>
+<p><strong>多重继承</strong></p>
+<p><strong>当一个类继承多个类，且多个基类都有虚函数时，子类对象中将包含多个虚函数表的指针</strong></p>
+<img src="/2020/03/06/C++%E4%B9%8B%E5%A4%9A%E6%80%81/Users/hqnddw/Desktop/md文件/c++面试点.assets/898333-20160609110953746-1340412428.png" alt="img" style="zoom:99%;">
+
+<ul>
+<li>A和B都没有基类，但是都有虚函数，因此各有一个虚函数指针</li>
+<li>C同时继承了A和B，因此会继承两个虚函数指针，但是为了节省空间，C会与主基类A公用一个虚函数指针（即上图中vptr1），继承自B的虚函数指针假设为vptr2。</li>
+<li>C没有重写继承自A和B的虚函数，因此在C的虚函数表中存在A::foo和B::bar函数指针（如果C中重写了foo()，则C的虚函数表中A::foo会被替换为C::foo）。</li>
+<li>C中有两个虚函数指针vptr1和vptr2，相当于有两张虚函数表</li>
+</ul>
+]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>C++</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>指针、数组和函数</title>
     <url>/2020/02/11/%E6%8C%87%E9%92%88%E3%80%81%E6%95%B0%E7%BB%84%E5%92%8C%E5%87%BD%E6%95%B0/</url>
     <content><![CDATA[<p><strong>数组指针和指针数组</strong></p>
@@ -1884,11 +2015,12 @@
 
 ]]></content>
       <categories>
-        <category>C++</category>
+        <category>C</category>
       </categories>
       <tags>
         <tag>C</tag>
         <tag>指针</tag>
+        <tag>Cpp</tag>
       </tags>
   </entry>
   <entry>

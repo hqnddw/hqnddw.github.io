@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="锁,原子操作," />
+  <meta name="keywords" content="原子操作," />
 
 
 
@@ -82,14 +82,14 @@
 
 
 <meta name="description" content="锁的机制常用的锁机制有两种：  乐观锁：假设不会发生并发冲突，每次不加锁而去完成某项操作，只在提交操作时，检查是否违反数据完整性。如果因为冲突失败就继续重试，直到成功为止。而乐观锁用到的机制就是CAS  乐观锁大多是基于数据版本记录机制实现。为数据增加一个版本标识，比如在基于数据库表的版本解决方案中，一般是通过数据库表增加一个“version”字段来实现。读取数据时，将此版本号一同读出，之后更新时">
-<meta name="keywords" content="锁,原子操作">
+<meta name="keywords" content="原子操作">
 <meta property="og:type" content="article">
 <meta property="og:title" content="锁和CAS操作">
 <meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;05&#x2F;%E9%94%81%E5%92%8CCAS%E6%93%8D%E4%BD%9C&#x2F;index.html">
 <meta property="og:site_name" content="lwl的博客">
 <meta property="og:description" content="锁的机制常用的锁机制有两种：  乐观锁：假设不会发生并发冲突，每次不加锁而去完成某项操作，只在提交操作时，检查是否违反数据完整性。如果因为冲突失败就继续重试，直到成功为止。而乐观锁用到的机制就是CAS  乐观锁大多是基于数据版本记录机制实现。为数据增加一个版本标识，比如在基于数据库表的版本解决方案中，一般是通过数据库表增加一个“version”字段来实现。读取数据时，将此版本号一同读出，之后更新时">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2020-10-05T14:27:27.468Z">
+<meta property="og:updated_time" content="2020-10-14T01:01:50.709Z">
 <meta name="twitter:card" content="summary">
 
 
@@ -220,16 +220,6 @@
           </a>
         </li>
       
-        
-        <li class="menu-item menu-item-top">
-          <a href="/top/" rel="section">
-            
-              <i class="menu-item-icon fa fa-fw fa-signal"></i> <br />
-            
-            top
-          </a>
-        </li>
-      
 
       
     </ul>
@@ -315,8 +305,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E9%94%81/" itemprop="url" rel="index">
-                    <span itemprop="name">锁</span>
+                  <a href="/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/" itemprop="url" rel="index">
+                    <span itemprop="name">多线程</span>
                   </a>
                 </span>
 
@@ -423,8 +413,6 @@
     <footer class="post-footer">
       
         <div class="post-tags">
-          
-            <a href="/tags/%E9%94%81/" rel="tag"># 锁</a>
           
             <a href="/tags/%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C/" rel="tag"># 原子操作</a>
           
@@ -554,7 +542,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">26</span>
+                  <span class="site-state-item-count">23</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>

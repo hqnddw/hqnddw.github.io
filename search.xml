@@ -12,10 +12,10 @@
 
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
         <tag>智能指针</tag>
       </tags>
   </entry>
@@ -37,10 +37,10 @@
 
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
         <tag>智能指针</tag>
       </tags>
   </entry>
@@ -429,10 +429,10 @@
 </tbody></table>
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
@@ -600,10 +600,10 @@
 </ol>
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
@@ -842,10 +842,9 @@
 <p><strong>NOTE：并非所有情况都会使用缓存一致性的，如被操作的数据不能被缓存在CPU内部或操作数据跨越多个缓存行(状态无法标识)，则处理器会调用总线锁定;另外当CPU不支持缓存锁定时，自然也只能用总线锁定了</strong></p>
 ]]></content>
       <categories>
-        <category>锁</category>
+        <category>多线程</category>
       </categories>
       <tags>
-        <tag>锁</tag>
         <tag>原子操作</tag>
       </tags>
   </entry>
@@ -1710,7 +1709,6 @@
         <category>操作系统</category>
       </categories>
       <tags>
-        <tag>fork</tag>
         <tag>操作系统</tag>
       </tags>
   </entry>
@@ -1740,8 +1738,8 @@
         <category>设计模式</category>
       </categories>
       <tags>
-        <tag>设计模式</tag>
         <tag>C++</tag>
+        <tag>设计模式</tag>
       </tags>
   </entry>
   <entry>
@@ -1855,10 +1853,10 @@
 <p>前置++的效率更高，理由是：后置++会生成临时对象</p>
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
@@ -1953,10 +1951,10 @@
 </ul>
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
@@ -2015,10 +2013,10 @@
 
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
         <tag>C</tag>
         <tag>指针</tag>
       </tags>
@@ -2047,10 +2045,10 @@
 
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
       </tags>
   </entry>
   <entry>
@@ -2124,10 +2122,10 @@
 
 ]]></content>
       <categories>
-        <category>Cpp</category>
+        <category>C++</category>
       </categories>
       <tags>
-        <tag>Cpp</tag>
+        <tag>C++</tag>
         <tag>STL</tag>
       </tags>
   </entry>

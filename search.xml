@@ -1,6 +1,455 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>互联网高可用架构</title>
+    <url>/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/</url>
+    <content><![CDATA[<h3 id="什么是高可用"><a href="#什么是高可用" class="headerlink" title="什么是高可用"></a>什么是高可用</h3><p><strong>高可用</strong>HA（High Availability）是分布式系统架构设计中必须考虑的因素之一，它通常是指，通过设计减少系统不能提供服务的时间。</p>
+<p>假设系统一直能够提供服务，我们说系统的可用性是100%。如果系统每运行100个时间单位，会有1个时间单位无法提供服务，我们说系统的可用性是99%。</p>
+<p>很多公司的高可用目标是4个9，也就是99.99%，这就意味着，系统的年停机时间为8.76个小时。</p>
+<hr>
+<h3 id="如何保障系统的高可用"><a href="#如何保障系统的高可用" class="headerlink" title="如何保障系统的高可用"></a><strong>如何保障系统的高可用</strong></h3><p>我们都知道，单点是系统高可用的大敌，单点往往是系统高可用最大的风险和敌人，应该尽量在系统设计的过程中避免单点。方法论上，高可用保证的原则是“集群化”，或者叫“冗余”：只有一个单点，挂了服务会受影响；如果有冗余备份，挂了还有其他backup能够顶上</p>
+<p>保证系统高可用，架构设计的<strong>核心准则</strong>是：<strong>冗余</strong>。</p>
+<p>有了冗余之后，还不够，每次出现故障需要人工介入恢复势必会增加系统的不可服务实践。所以，又往往是通过“<strong>自动故障转移</strong>”来实现系统的高可用</p>
+<p>接下来我们看下典型互联网架构中，如何通过冗余+自动故障转移来保证系统的高可用特性。</p>
+<hr>
+<h3 id="常见的互联网分层架构"><a href="#常见的互联网分层架构" class="headerlink" title="常见的互联网分层架构"></a>常见的互联网分层架构</h3><p><img src="https://mmbiz.qpic.cn/mmbiz_png/YrezxckhYOxZeXfbW7Kckceh9CscyyfG8PWEuTHibe1esjn7luyCtazdzwCtVOXooa4qzVqkEbLADEnJ7vaJqRQ/640?wx_fmt=png&tp=webp&wxfrom=5&wx_lazy=1&wx_co=1" alt="img"></p>
+<p>常见互联网分布式架构如上，分为：</p>
+<ol>
+<li><strong>客户端层</strong>：典型调用方是浏览器browser或者手机应用APP；</li>
+<li><strong>反向代理层</strong>：系统入口，反向代理；</li>
+<li><strong>站点应用层</strong>：实现核心应用逻辑，返回html或者json；</li>
+<li><strong>服务层</strong>：如果实现了服务化，就有这一层；</li>
+<li><strong>数据-缓存层</strong>：缓存加速访问存储；</li>
+<li><strong>数据-数据库层</strong>：数据库固化数据存储；</li>
+</ol>
+<p>整个系统的高可用，又是通过每一层的<strong>冗余+自动故障转移</strong>来综合实现的</p>
+<hr>
+<h3 id="分层高可用架构实践"><a href="#分层高可用架构实践" class="headerlink" title="分层高可用架构实践"></a><strong>分层高可用架构实践</strong></h3><p><strong>【客户端层-&gt;反向代理层】的高可用</strong></p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231623661.png" alt="image-20201016231623661"></p>
+<p>【客户端层】到【反向代理层】的高可用，是通过反向代理层的冗余来实现的。以nginx为例：有两台nginx，一台对线上提供服务，另一台冗余以保证高可用，常见的实践是keepalived存活探测，相同virtual IP提供服务。</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231659101.png" alt="image-20201016231659101"></p>
+<p>自动故障转移：当nginx挂了的时候，keepalived能够探测到，会自动的进行故障转移，将流量自动迁移到shadow-nginx，由于使用的是相同的virtual IP，这个切换过程对调用方是透明的。</p>
+<p><strong>【反向代理层-&gt;站点层】的高可用</strong></p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231707021.png" alt="image-20201016231707021"></p>
+<p>【反向代理层】到【站点层】的高可用，是通过站点层的冗余来实现的。假设反向代理层是nginx，nginx.conf里能够配置多个web后端，并且nginx能够探测到多个后端的存活性</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231735734.png" alt="image-20201016231735734"></p>
+<p>自动故障转移：当web-server挂了的时候，nginx能够探测到，会自动的进行故障转移，将流量自动迁移到其他的web-server，整个过程由nginx自动完成，对调用方是透明的。</p>
+<p><strong>【站点层-&gt;服务层】的高可用</strong></p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231803142.png" alt="image-20201016231803142"></p>
+<p>【站点层】到【服务层】的高可用，是通过服务层的冗余来实现的。“服务连接池”会建立与下游服务多个连接，每次请求会“随机”选取连接来访问下游服务。</p>
+<p>自动故障转移：当service挂了的时候，service-connection-pool能够探测到，会自动的进行故障转移，将流量自动迁移到其他的service，整个过程由连接池自动完成，对调用方是透明的（所以说RPC-client中的服务连接池是很重要的基础组件）</p>
+<p><strong>【服务层&gt;缓存层】的高可用</strong></p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231833638.png" alt="image-20201016231833638"></p>
+<p>【服务层】到【缓存层】的高可用，是通过缓存数据的冗余来实现的。</p>
+<p>缓存层的数据冗余又有几种方式：第一种是利用客户端的封装，service对cache进行双读或者双写</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231931789.png" alt="image-20201016231931789"></p>
+<p>缓存层也可以通过支持主从同步的缓存集群来解决缓存层的高可用问题。</p>
+<p>以redis为例，redis天然支持主从同步，redis官方也有sentinel哨兵机制，来做redis的存活性检测。</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016231850934.png" alt="image-20201016231850934"></p>
+<p>自动故障转移：当redis主挂了的时候，sentinel能够探测到，会通知调用方访问新的redis，整个过程由sentinel和redis集群配合完成，对调用方是透明的。</p>
+<p>说完缓存的高可用，这里要多说一句，业务对缓存并不一定有“高可用”要求，更多的对缓存的使用场景，是用来“加速数据访问”：把一部分数据放到缓存里，如果缓存挂了或者缓存没有命中，是可以去后端的数据库中再取数据的。</p>
+<p>这类允许“cache miss”的业务场景，缓存架构的建议是</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016232045468.png" alt="image-20201016232045468"></p>
+<p>将kv缓存封装成服务集群，上游设置一个代理（代理可以用集群冗余的方式保证高可用），代理的后端根据缓存访问的key水平切分成若干个实例，每个实例的访问并不做高可用</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016232108966.png" alt="image-20201016232108966"></p>
+<p>缓存实例挂了屏蔽：当有水平切分的实例挂掉时，代理层直接返回cache miss，此时缓存挂掉对调用方也是透明的。key水平切分实例减少，不建议做re-hash，这样容易引发缓存数据的不一致</p>
+<p><strong>【服务层&gt;数据库层】的高可用</strong></p>
+<p>大部分互联网技术，数据库层都用了“主从同步，读写分离”架构，所以数据库层的高可用，又分为“读库高可用”与“写库高可用”两类。</p>
+<p><strong>【服务层&gt;数据库层“读”】的高可用</strong></p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016232206412.png" alt="image-20201016232206412"></p>
+<p>【服务层】到【数据库读】的高可用，是通过读库的冗余来实现的。</p>
+<p>既然冗余了读库，一般来说就至少有2个从库，“数据库连接池”会建立与读库多个连接，每次请求会路由到这些读库。</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016232235508.png" alt="image-20201016232235508"></p>
+<p>自动故障转移：当读库挂了的时候，db-connection-pool能够探测到，会自动的进行故障转移，将流量自动迁移到其他的读库，整个过程由连接池自动完成，对调用方是透明的</p>
+<p><strong>【服务层&gt;数据库层“写”】的高可用</strong></p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016232308068.png" alt="image-20201016232308068"></p>
+<p>【服务层】到【数据库写】的高可用，是通过写库的冗余来实现的。</p>
+<p>以mysql为例，可以设置两个mysql双主同步，一台对线上提供服务，另一台冗余以保证高可用，常见的实践是keepalived存活探测，相同virtual IP提供服务</p>
+<p><img src="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/image-20201016232323428.png" alt="image-20201016232323428"></p>
+<p>自动故障转移：当写库挂了的时候，keepalived能够探测到，会自动的进行故障转移，将流量自动迁移到shadow-db-master，由于使用的是相同的virtual IP，这个切换过程对调用方是透明的</p>
+<hr>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>高可用HA（High Availability）是分布式系统架构设计中必须考虑的因素之一，它通常是指，通过设计减少系统不能提供服务的时间。</p>
+<p>方法论上，高可用是通过<strong>冗余+自动故障转移来实现的。</strong></p>
+<p>整个互联网分层系统架构的高可用，又是通过每一层的冗余+自动故障转移来综合实现的，具体的：</p>
+<p>（1）【客户端层】到【反向代理层】的高可用，是通过反向代理层的冗余实现的，常见实践是keepalived + virtual IP自动故障转移；</p>
+<p>（2）【反向代理层】到【站点层】的高可用，是通过站点层的冗余实现的，常见实践是nginx与web-server之间的存活性探测与自动故障转移；</p>
+<p>（3）【站点层】到【服务层】的高可用，是通过服务层的冗余实现的，常见实践是通过service-connection-pool来保证自动故障转移；</p>
+<p>（4）【服务层】到【缓存层】的高可用，是通过缓存数据的冗余实现的，常见实践是缓存客户端双读双写，或者利用缓存集群的主从数据同步与sentinel保活与自动故障转移；更多的业务场景，对缓存没有高可用要求，可以使用缓存服务化来对调用方屏蔽底层复杂性；</p>
+<p>（5）【服务层】到【数据库“读”】的高可用，是通过读库的冗余实现的，常见实践是通过db-connection-pool来保证自动故障转移；</p>
+<p>（6）【服务层】到【数据库“写”】的高可用，是通过写库的冗余实现的，常见实践是keepalived + virtual IP自动故障转移；</p>
+]]></content>
+      <categories>
+        <category>design</category>
+      </categories>
+      <tags>
+        <tag>高可用</tag>
+        <tag>design</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>主键和聚集索引</title>
+    <url>/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/</url>
+    <content><![CDATA[<h3 id="Test1：建表时，可不可以不声明主键？"><a href="#Test1：建表时，可不可以不声明主键？" class="headerlink" title="Test1：建表时，可不可以不声明主键？"></a>Test1：<strong>建表时，可不可以不声明主键？</strong></h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">(1) <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="keyword">user</span>(</span><br><span class="line">	<span class="keyword">name</span> <span class="built_in">VARCHAR</span>(<span class="number">10</span>)</span><br><span class="line">    ) <span class="keyword">ENGINE</span>=<span class="keyword">INNODB</span>;</span><br><span class="line">(2) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span> <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br><span class="line">(3) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span> <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br></pre></td></tr></table></figure>
+
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 均不报错</em></p>
+<p><img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016222251686.png" alt="image-20201016222251686"></p>
+<p>实操如上，所以<strong>答案是【D 均不报错】</strong></p>
+<p>InnoDB必须要有聚集索引，行记录按照聚集索引物理上排序。必须要有聚集索引，并不代表一定要有主键。</p>
+<ol>
+<li>如果定义了主键，主键就是聚集索引；</li>
+<li>如果没有定义主键，第一个<strong>非空(not null)且唯一(unique)</strong>列是聚集索引；</li>
+<li>如果没有符合条件的列，会自动创建一个隐藏的row-id作为聚集索引；</li>
+</ol>
+<p><strong><em>本例就属于第三种情况</em></strong></p>
+<hr>
+<h3 id="Test2：建表时，可不可以不声明主键非空？"><a href="#Test2：建表时，可不可以不声明主键非空？" class="headerlink" title="Test2：建表时，可不可以不声明主键非空？"></a>Test2：<strong>建表时，可不可以不声明主键非空？</strong></h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">(1) <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="keyword">user</span>(</span><br><span class="line">	<span class="keyword">id</span> <span class="built_in">int</span> ,</span><br><span class="line">	<span class="keyword">name</span> <span class="built_in">VARCHAR</span>(<span class="number">10</span>),</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span>(<span class="keyword">id</span>)</span><br><span class="line">    ) <span class="keyword">ENGINE</span>=<span class="keyword">INNODB</span>;</span><br><span class="line">(2) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span>(<span class="keyword">name</span>) <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br><span class="line">(3) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span>(<span class="keyword">name</span>) <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br></pre></td></tr></table></figure>
+
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 均不报错</em></p>
+<p><img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016223354449.png" alt="image-20201016223354449"></p>
+<p>实操如上，所以<strong>答案是：【B 插入语句(3)报错】</strong></p>
+<p>建表语句可以不主动设置主键非空（上例中的id），InnoDB会自动添加<strong>非空(not null)且唯一(unique)</strong>的限制。****</p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016223656115.png" alt="image-20201016223656115" style="zoom:80%;">
+
+<p>使用show create table查看，会发现主键列要求非空，所以第一次插入就产生错误</p>
+<hr>
+<h3 id="Test3：建表时，可不可以选择多个字段做主键"><a href="#Test3：建表时，可不可以选择多个字段做主键" class="headerlink" title="Test3：建表时，可不可以选择多个字段做主键"></a>Test3：<strong>建表时，可不可以选择多个字段做主键</strong></h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">（1）<span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">         <span class="keyword">id</span> <span class="built_in">int</span> <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         <span class="keyword">name</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         primary <span class="keyword">key</span>(<span class="keyword">id</span>, <span class="keyword">name</span>)</span><br><span class="line">)<span class="keyword">engine</span>=<span class="keyword">innodb</span>;</span><br><span class="line"></span><br><span class="line">（2）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span> <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">'lwl'</span>);</span><br><span class="line">（3）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span> <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">'hqnddw'</span>);</span><br><span class="line">（4）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span> <span class="keyword">values</span>(<span class="number">2</span>, <span class="string">'lwl'</span>);</span><br></pre></td></tr></table></figure>
+
+<p><em>建表时，声明联合主键(a,b)，插入若干元素，有些a重复，有些b重复</em></p>
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 插入语句(3)报错</em></p>
+<p><em>E 均不报错</em></p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016225501330.png" alt="image-20201016225501330" style="zoom:80%;">
+
+<p>实操如上，所以答案是：<strong>【E 均不报错】</strong></p>
+<p>这就是所谓的<strong>联合主键</strong>，不要求每个列唯一，而要求联合主键各个列的“组合唯一”。</p>
+<hr>
+<h3 id="Test4：可不可以主动插入自增主键？"><a href="#Test4：可不可以主动插入自增主键？" class="headerlink" title="Test4：可不可以主动插入自增主键？"></a>Test4：<strong>可不可以主动插入自增主键？</strong></h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">（1）<span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">         <span class="keyword">id</span> <span class="built_in">int</span> auto_increment,</span><br><span class="line">         <span class="keyword">name</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         primary <span class="keyword">key</span>(<span class="keyword">id</span>)</span><br><span class="line"></span><br><span class="line">)<span class="keyword">engine</span>=<span class="keyword">innodb</span>;</span><br><span class="line"></span><br><span class="line">（2）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br><span class="line">（3）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">id</span>, <span class="keyword">name</span>) <span class="keyword">values</span>(<span class="number">10</span>,<span class="string">'lwl'</span>);</span><br><span class="line">（4）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br></pre></td></tr></table></figure>
+
+<p><em>建表时，自增ID为主键，插入若干元素，有些包含自增ID，有些不包含</em></p>
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 插入语句(3)报错</em></p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016225818169.png" alt="image-20201016225818169" style="zoom:80%;">
+
+<p>实操如上，所以答案是：<strong>【E 均不报错】</strong></p>
+<p>自增ID经常被用来作为主键，插入行记录时，不指定值，InnoDB自动增加。同时，也可以手动指定值：</p>
+<ol>
+<li>手动指定的值与已有值重复，则主键冲突；</li>
+<li>与已有值不冲突，则插入成功；</li>
+<li>未来不指定值插入，会从手动插入值往后继续递增；</li>
+</ol>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016225925152.png" alt="image-20201016225925152" style="zoom:80%;">
+
+<p>如上例，手动插入10后，未来插入的行会从11开始，自增ID中间出现空洞</p>
+<hr>
+<h3 id="Test5：建表时，可不可以使用联合自增主键？"><a href="#Test5：建表时，可不可以使用联合自增主键？" class="headerlink" title="Test5：建表时，可不可以使用联合自增主键？"></a>Test5：建表时，可不可以使用联合自增主键？</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">（1）<span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">         <span class="keyword">id</span> <span class="built_in">int</span> auto_increment,</span><br><span class="line">         <span class="keyword">name</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         primary <span class="keyword">key</span>(<span class="keyword">name</span>, <span class="keyword">id</span>)</span><br><span class="line">)<span class="keyword">engine</span>=<span class="keyword">innodb</span>;</span><br><span class="line"></span><br><span class="line">（2）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br><span class="line">（3）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">id</span>, <span class="keyword">name</span>) <span class="keyword">values</span>(<span class="number">10</span>,<span class="string">'lwl'</span>);</span><br><span class="line">（4）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br></pre></td></tr></table></figure>
+
+<p><em>建表时，声明联合主键(a,b)，并且有一个是自增ID，插入若干元素，包含自增ID，有些不包含。</em></p>
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 插入语句(3)报错</em></p>
+<p><em>E 均不报错</em></p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016230146399.png" alt="image-20201016230146399" style="zoom:80%;">
+
+<p>实操如上，所以答案是：【A 建表语句(1)报错】</p>
+<p>这里不是指自增ID不能作为联合主键，而是如果作为联合主键，必须放在第一列，即：</p>
+<p><em>primary key(name,</em> <em>id**)</em></p>
+<p>改为</p>
+<p><em>primary key(<strong>id</strong>, name)</em></p>
+<hr>
+<p><strong>总结</strong></p>
+<p><strong>一：InnoDB建表时，可不可以不声明主键？</strong></p>
+<p>可以不声明主键，但必须要有聚集索引：</p>
+<ol>
+<li>有主键，主键是聚集索引；</li>
+<li>没有主键，首个非空唯一列是聚集索引；</li>
+<li>没有符合条件的列，row-id是聚集索引；</li>
+</ol>
+<p>主键和聚集索引不是一个东西，不要混淆。</p>
+<p> <strong>二：InnoDB建表时，可不可以不声明主键非空？</strong></p>
+<p>可以不声明主键非空，会自动加上非空限制。</p>
+<p> <strong>三：InnoDB建表时，可不可以选择多个字段做主键？</strong></p>
+<p>可以使用联合主键，组合列唯一即可。</p>
+<p><strong>四：InnoDB插入时，可不可以主动插入自增主键？</strong></p>
+<p>可以指定自增列的值，但可能导致空洞。</p>
+<p><strong>五：InnoDB建表时，可不可以使用联合自增主键？</strong></p>
+<p>可以，但自增ID必须在联合主键的第一列。</p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>数据库</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis提供的持久化机制</title>
+    <url>/2020/10/16/Redis%E6%8F%90%E4%BE%9B%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<p>Redis提供了RDB持久化和AOF持久化</p>
+<h3 id="RDB机制的优势和略施"><a href="#RDB机制的优势和略施" class="headerlink" title="RDB机制的优势和略施"></a>RDB机制的优势和略施</h3><p>RDB持久化是指在指定的时间间隔内将内存中的数据集快照写入磁盘，也是默认的持久化方式，这种方式是就是将内存中数据以快照的方式写入到二进制文件中,默认的文件名为dump.rdb</p>
+<p>可以通过配置设置自动做快照持久化的方式。我们可以配置redis在n秒内如果超过m个key被修改就自动做快照，下面是默认的快照保存配置</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">save <span class="number">900</span> <span class="number">1</span>     <span class="comment">#900秒内如果超过1个key被修改，则发起快照保存</span></span><br><span class="line">save <span class="number">300</span> <span class="number">10</span>    <span class="comment">#300秒内容如超过10个key被修改，则发起快照保存</span></span><br><span class="line">save <span class="number">60</span> <span class="number">10000</span>  <span class="comment">#60秒内容如超过10000个key被修改，则发起快照保存</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="RDB文件保存过程"><a href="#RDB文件保存过程" class="headerlink" title="RDB文件保存过程"></a><strong>RDB文件保存过程</strong></h4><ul>
+<li>redis调用fork,现在有了子进程和父进程。</li>
+<li>父进程继续处理client请求，子进程负责将内存内容写入到临时文件。由于os的写时复制机制（copy on write)父子进程会共享相同的物理页面，当父进程处理写请求时os会为父进程要修改的页面创建副本，而不是写共享的页面。所以子进程的地址空间内的数据是fork时刻整个数据库的一个快照。</li>
+<li>当子进程将快照写入临时文件完毕后，用临时文件替换原来的快照文件，然后子进程退出。</li>
+</ul>
+<p>client 也可以使用SAVE或者BGSAVE命令通知redis做一次快照持久化。<strong>SAVE操作是在主线程中保存快照的</strong>，由于redis是用一个主线程来处理所有 client的请求，<strong>这种方式会阻塞所有client请求</strong>，所以不推荐使用。</p>
+<p>另一点需要注意的是，每次快照持久化都是将内存数据完整写入到磁盘一次，并不 是增量的只同步脏数据。如果数据量大的话，而且写操作比较多，必然会引起大量的磁盘io操作，可能会严重影响性能</p>
+<h4 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h4><ul>
+<li>一旦采用该方式，那么你的整个Redis数据库将只包含一个文件，这样非常方便进行备份。比如你可能打算没1天归档一些数据。</li>
+<li>方便备份，我们可以很容易的将一个一个RDB文件移动到其他的存储介质上</li>
+<li>RDB 在恢复大数据集时的速度比 AOF 的恢复速度要快。</li>
+<li>RDB 可以最大化 Redis 的性能：父进程在保存 RDB 文件时唯一要做的就是 fork 出一个子进程，然后这个子进程就会处理接下来的所有保存工作，父进程无须执行任何磁盘 I/O 操作。</li>
+</ul>
+<h4 id="劣势"><a href="#劣势" class="headerlink" title="劣势"></a>劣势</h4><ul>
+<li>在redis故障的时候，RDB由于它是定期去数据快照，所以说可能会丢失一部分数据。</li>
+<li>RDB每次在fork子进程来生成快照文件的时候，如果数据文件特别大，可能会导致对客户端提供服务暂停数毫秒，甚至数秒</li>
+</ul>
+<h3 id="AOF文件保存过程"><a href="#AOF文件保存过程" class="headerlink" title="AOF文件保存过程"></a>AOF文件保存过程</h3><p>redis会将每一个收到的写命令都通过write函数追加到文件中(默认是 appendonly.AOF)。</p>
+<p>当redis重启时会通过重新执行文件中保存的写命令来在内存中重建整个数据库的内容。当然由于os会在内核中缓存 write做的修改，所以可能不是立即写到磁盘上。这样AOF方式的持久化也还是有可能会丢失部分修改。不过我们可以通过配置文件告诉redis我们想要 通过fsync函数强制os写入到磁盘的时机。有三种方式如下（默认是：每秒fsync一次）</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">appendfsync always       <span class="comment">//每次收到写命令就立即强制写入磁盘，最慢的，但是保证完全的持久化，不推荐使用</span></span><br><span class="line">appendfsync everysec     <span class="comment">//每秒钟强制写入磁盘一次，在性能和持久化方面做了很好的折中，推荐</span></span><br><span class="line">appendfsync no           <span class="comment">//完全依赖os，性能最好,持久化没保证</span></span><br></pre></td></tr></table></figure>
+
+<p>AOF 的方式也同时带来了另一个问题。持久化文件会变的越来越大。例如我们调用incr test命令100次，文件中必须保存全部的100条命令，其实有99条都是多余的。因为要恢复数据库的状态其实文件中保存一条set test 100就够了。</p>
+<p>为了压缩AOF的持久化文件。redis提供了BGREWRITEAOF命令。收到此命令redis将使用与快照类似的方式将内存中的数据以命令的方式保存到临时文件中，最后替换原来的文件。具体过程如下</p>
+<ul>
+<li>redis调用fork，现在有父子两个进程</li>
+<li>子进程根据内存中的数据库快照，往临时文件中写入重建数据库状态的命令</li>
+<li>父进程继续处理client请求，除了把写命令写入到原来的AOF文件中。同时把收到的写命令缓存起来。这样就能保证如果子进程重写失败的话并不会出问题。</li>
+<li>当子进程把快照内容以命令方式写到临时文件中后，子进程发信号通知父进程。然后父进程把缓存的写命令也写入到临时文件。</li>
+<li>现在父进程可以使用临时文件替换老的AOF文件，并重命名，后面收到的写命令也开始往新的AOF文件中追加。</li>
+</ul>
+<h4 id="优势-1"><a href="#优势-1" class="headerlink" title="优势"></a>优势</h4><ul>
+<li>AOF可以更好的避免数据丢失问题，默认AOF每隔1S，通过后台线程执行一次fsync操作，它最多丢失1S的数据。</li>
+<li>AOF日志文件以append-only模式写入，所以没有任何磁盘寻址的开销，写入性能比较高，而且文件不容易受损坏，redis也提供了修复受损坏AOF文件的方式，很容易修复。</li>
+<li>AOF日志文件可读性比较高，可以追踪误操作记录。</li>
+</ul>
+<h4 id="劣势-1"><a href="#劣势-1" class="headerlink" title="劣势"></a>劣势</h4><ul>
+<li>对于相同的数据集来说，AOF 文件的体积通常要大于 RDB 文件的体积。</li>
+<li>AOF开启之后，支持的写QPS会比RDB支持的写QPS低，因为默认AOF会每秒去fsync一次日志</li>
+</ul>
+<h3 id="RDB和AOF该如何选择？"><a href="#RDB和AOF该如何选择？" class="headerlink" title="RDB和AOF该如何选择？"></a>RDB和AOF该如何选择？</h3><p>其实我们应该两者一起使用的，<strong>用AOF来保证尽可能的不丢失数据，作为数据恢复的第一选择</strong>，<strong>利用RDB来做冷备</strong>，当AOF丢失或者不可用的时候来使用RDB快照来快速回复。</p>
+<p>如果单一选择RDB的话对比AOF可能会丢失部分数据，选择单一选择AOF的话又没有RDB回复的速度快而且AOF的备份很复杂</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>Redis数据库主从不一致问题解决方案</title>
+    <url>/2020/10/16/Redis%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/</url>
+    <content><![CDATA[<p>问：常见的数据库集群架构如何？</p>
+<p>答：一主多从，主从同步，读写分离。</p>
+<img src="/2020/10/16/Redis%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/1859050-20191231204029749-1957726702.png" alt="img" style="zoom: 110%;">
+
+<p>如上图：</p>
+<ol>
+<li>一个主库提供写服务</li>
+<li>多个从库提供读服务，可以增加从库提升读性能</li>
+<li>主从之间同步数据</li>
+</ol>
+<hr>
+<p>问：为什么会出现不一致？</p>
+<p>答：主从同步有时延，这个时延期间读从库，可能读到不一致的数据</p>
+<img src="/2020/10/16/Redis%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/1859050-20191231204120028-137021286.png" alt="img" style="zoom:110%;">
+
+<p>如上图：</p>
+<ol>
+<li>服务发起了一个写请求</li>
+<li>服务又发起了一个读请求，此时同步未完成，读到一个不一致的脏数据</li>
+<li>数据库主从同步最后才完成</li>
+</ol>
+<hr>
+<p>问：如何避免这种主从延时导致的不一致？</p>
+<p>答：常见的方法有这么几种。</p>
+<p><strong>方案一</strong>：忽略</p>
+<p>如果业务能够接受，别把系统架构搞得太复杂</p>
+<p><strong>方案二</strong>：强制读主</p>
+<img src="/2020/10/16/Redis%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/1859050-20191231204152709-424228585.png" alt="img" style="zoom:110%;">
+
+<p>如上图：</p>
+<ol>
+<li>使用一个高可用主库提供数据库服务</li>
+<li>读和写都落到主库上</li>
+<li>采用缓存来提升系统读性能</li>
+</ol>
+<p><strong>方案三</strong>：选择性读主</p>
+<p>强制读主过于粗暴，毕竟只有少量写请求，很短时间，可能读取到脏数据</p>
+<p>可以利用一个缓存记录必须读主的数据。</p>
+<img src="/2020/10/16/Redis%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/1859050-20191231204213785-1368718821.png" alt="img" style="zoom:110%;">
+
+<p>如上图，当写请求发生时：</p>
+<ol>
+<li>写主库</li>
+<li>将哪个库，哪个表，哪个主键三个信息拼装一个key设置到cache里，这条记录的超时时间，设置为“主从同步时延”。<em>key的格式为“db:table:PK”，假设主从延时为1s，这个key的cache超时时间也为1s</em></li>
+</ol>
+<img src="/2020/10/16/Redis%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%BB%E4%BB%8E%E4%B8%8D%E4%B8%80%E8%87%B4%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88/1859050-20191231204237080-743200937.png" alt="img" style="zoom:110%;">
+
+<p>如上图，当读请求发生时：</p>
+<p>这是要读哪个库，哪个表，哪个主键的数据呢，也将这三个信息拼装一个key，到cache里去查询，如果，</p>
+<ol>
+<li>cache里有这个key，说明1s内刚发生过写请求，数据库主从同步可能还没有完成，此时就应该去主库查询</li>
+<li>cache里没有这个key，说明最近没有发生过写请求，此时就可以去从库查询</li>
+</ol>
+<p>以此，保证读到的一定不是不一致的脏数据</p>
+<hr>
+<p>总结</p>
+<p>数据库主库和从库不一致，常见有这么几种优化方案：</p>
+<ol>
+<li>业务可以接受，系统不优化</li>
+<li>强制读主，高可用主库，用缓存提高读性能</li>
+<li>在cache里记录哪些记录发生过写请求，来路由读主还是读从</li>
+</ol>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>XSS攻击</title>
+    <url>/2020/10/16/XSS%E6%94%BB%E5%87%BB/</url>
+    <content><![CDATA[<h3 id="什么是-XSS"><a href="#什么是-XSS" class="headerlink" title="什么是 XSS"></a>什么是 XSS</h3><p>Cross-Site Scripting（跨站脚本攻击）简称 XSS，是一种代码注入攻击。攻击者通过在目标网站上注入恶意脚本，使之在用户的浏览器上运行。利用这些恶意脚本，攻击者可获取用户的敏感信息如 Cookie、SessionID 等，进而危害数据安全。</p>
+<p>为了和 CSS 区分，这里把攻击的第一个字母改成了 X，于是叫做 XSS。</p>
+<p>XSS 的本质是：恶意代码未经过滤，与网站正常的代码混在一起；浏览器无法分辨哪些脚本是可信的，导致恶意脚本被执行。</p>
+<p>而由于直接在用户的终端执行，恶意代码能够直接获取用户的信息，或者利用这些信息冒充用户向网站发起攻击者定义的请求。</p>
+<p>在部分情况下，由于输入的限制，注入的恶意脚本比较短。但可以通过引入外部的脚本，并由浏览器执行，来完成比较复杂的攻击策略。</p>
+<p>这里有一个问题：用户是通过哪种方法“注入”恶意脚本的呢？</p>
+<p>不仅仅是业务上的“用户的 UGC 内容”可以进行注入，包括 URL 上的参数等都可以是攻击的来源。在处理输入时，以下内容都不可信：</p>
+<ul>
+<li>来自用户的 UGC 信息</li>
+<li>来自第三方的链接</li>
+<li>URL 参数</li>
+<li>POST 参数</li>
+<li>Referer （可能来自不可信的来源）</li>
+<li>Cookie （可能来自其他子域注入）</li>
+</ul>
+<h3 id="XSS-分类"><a href="#XSS-分类" class="headerlink" title="XSS 分类"></a>XSS 分类</h3><p>根据攻击的来源，XSS 攻击可分为存储型、反射型和 DOM 型三种</p>
+<h4 id="存储型-XSS"><a href="#存储型-XSS" class="headerlink" title="存储型 XSS"></a>存储型 XSS</h4><p>存储型 XSS 的攻击步骤：</p>
+<ol>
+<li>攻击者将恶意代码提交到目标网站的数据库中。</li>
+<li>用户打开目标网站时，网站服务端将恶意代码从数据库取出，拼接在 HTML 中返回给浏览器。</li>
+<li>用户浏览器接收到响应后解析执行，混在其中的恶意代码也被执行。</li>
+<li>恶意代码窃取用户数据并发送到攻击者的网站，或者冒充用户的行为，调用目标网站接口执行攻击者指定的操作</li>
+</ol>
+<p>这种攻击常见于带有用户保存数据的网站功能，如论坛发帖、商品评论、用户私信等。</p>
+<h4 id="反射型-XSS"><a href="#反射型-XSS" class="headerlink" title="反射型 XSS"></a>反射型 XSS</h4><p>反射型 XSS 的攻击步骤：</p>
+<ol>
+<li>攻击者构造出特殊的 URL，其中包含恶意代码。</li>
+<li>用户打开带有恶意代码的 URL 时，网站服务端将恶意代码从 URL 中取出，拼接在 HTML 中返回给浏览器。</li>
+<li>用户浏览器接收到响应后解析执行，混在其中的恶意代码也被执行。</li>
+<li>恶意代码窃取用户数据并发送到攻击者的网站，或者冒充用户的行为，调用目标网站接口执行攻击者指定的操作。</li>
+</ol>
+<p><strong>反射型 XSS 跟存储型 XSS 的区别是</strong>：存储型 XSS 的恶意代码存在数据库里，反射型 XSS 的恶意代码存在 URL 里。</p>
+<p>反射型 XSS 漏洞常见于通过 URL 传递参数的功能，如网站搜索、跳转等。</p>
+<p>由于需要用户主动打开恶意的 URL 才能生效，攻击者往往会结合多种手段诱导用户点击。</p>
+<p>POST 的内容也可以触发反射型 XSS，只不过其触发条件比较苛刻（需要构造表单提交页面，并引导用户点击），所以非常少见。</p>
+<h4 id="DOM-型-XSS"><a href="#DOM-型-XSS" class="headerlink" title="DOM 型 XSS"></a>DOM 型 XSS</h4><p>DOM 型 XSS 的攻击步骤：</p>
+<ol>
+<li>攻击者构造出特殊的 URL，其中包含恶意代码。</li>
+<li>用户打开带有恶意代码的 URL。</li>
+<li>用户浏览器接收到响应后解析执行，前端 JavaScript 取出 URL 中的恶意代码并执行。</li>
+<li>恶意代码窃取用户数据并发送到攻击者的网站，或者冒充用户的行为，调用目标网站接口执行攻击者指定的操作。</li>
+</ol>
+<p>DOM 型 XSS 跟前两种 XSS 的区别：DOM 型 XSS 攻击中，取出和执行恶意代码由浏览器端完成，属于前端 JavaScript 自身的安全漏洞，而其他两种 XSS 都属于服务端的安全漏洞</p>
+<h3 id="XSS防御"><a href="#XSS防御" class="headerlink" title="XSS防御"></a>XSS防御</h3><h4 id="完善的过滤体系"><a href="#完善的过滤体系" class="headerlink" title="完善的过滤体系"></a>完善的过滤体系</h4><p>永远不相信用户的输入。需要对用户的输入进行处理，只允许输入合法的值，其它值一概过滤掉</p>
+<h4 id="Html-encode"><a href="#Html-encode" class="headerlink" title="Html encode"></a>Html encode</h4><p>假如某些情况下，我们不能对用户数据进行严格的过滤，那我们也需要对标签进行转换</p>
+<table>
+<thead>
+<tr>
+<th>less-than character (&lt;)</th>
+<th>&amp;lt;</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>greater-than character (&gt;)</td>
+<td>&amp;gt;</td>
+</tr>
+<tr>
+<td>ampersand character (&amp;)</td>
+<td>&amp;amp;</td>
+</tr>
+<tr>
+<td>double-quote character (“)</td>
+<td>&amp;quot;</td>
+</tr>
+<tr>
+<td>space character( )</td>
+<td>&amp;nbsp;</td>
+</tr>
+<tr>
+<td>Any ASCII code character whose code is greater-than or equal to 0x80</td>
+<td>&amp;#&lt;number&gt;, where&lt;number&gt; is the ASCII character value.</td>
+</tr>
+</tbody></table>
+<p>比如用户输入：&lt;script&gt;window.location.href=”<code>http://www.baidu.com</code>”;&lt;/script&gt;，保存后最终存储的会是：&amp;lt;script&amp;gt;window.location.href=&amp;quot;<code>http://www.baidu.com</code>&amp;quot;&amp;lt;/script&amp;gt;在展现时浏览器会对这些字符转换成文本内容显示，而不是一段可执行的代码</p>
+]]></content>
+      <categories>
+        <category>网络安全</category>
+      </categories>
+      <tags>
+        <tag>网络安全</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>缓存雪崩、击穿、穿透</title>
+    <url>/2020/10/14/%E7%BC%93%E5%AD%98%E9%9B%AA%E5%B4%A9%E3%80%81%E7%A9%BF%E9%80%8F%E3%80%81%E5%87%BB%E7%A9%BF/</url>
+    <content><![CDATA[<h3 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h3><p><strong>大量的key</strong>设置了相同的过期时间，导致在缓存在同一时刻全部失效，造成瞬时DB请求量大、压力骤增，引起雪崩</p>
+<p><strong>解决方案：</strong></p>
+<ol>
+<li><p>在批量往Redis存数据的时候，把每个Key的失效时间都<strong>加个随机值</strong>就好了，这样可以保证数据不会在同一时间大面积失效</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">setRedis（Key，value，time + Math.random() * <span class="number">10000</span>）；</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>设置热点数据永远不过期，有更新操作就更新缓存就好了</p>
+</li>
+</ol>
+<h3 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h3><p>缓存穿透是指<strong>缓存和数据库中都没有的数据</strong>，而用户不断发起请求，我们数据库的 id 都是1开始自增上去的，如发起为id值为 -1 的数据或 id 为特别大不存在的数据。这时的用户很可能是攻击者，攻击会导致数据库压力过大，严重会击垮数据库。</p>
+<p><strong>解决方案：</strong></p>
+<ol>
+<li>接口层增加校验，比如用户鉴权校验，参数做校验，不合法的参数直接代码Return</li>
+<li>将对应Key的Value对写为null、位置错误、稍后重试这样的值，缓存有效时间可以设置短点，如30秒</li>
+<li>从网关层Nginx增加配置项，对每秒访问次数超过阈值的IP都拉黑</li>
+<li>使用布隆过滤器</li>
+</ol>
+<h3 id="缓存击穿"><a href="#缓存击穿" class="headerlink" title="缓存击穿"></a>缓存击穿</h3><p>缓存击穿跟缓存雪崩有点像，但是又有一点不一样，缓存雪崩是因为大面积的缓存失效，打崩了DB，而缓存击穿不同的是缓存击穿是指<strong>一个Key非常热点，在不停的扛着大并发</strong>，大并发集中对这一个点进行访问，当这个Key在失效的瞬间，持续的大并发就穿破缓存，直接请求数据库，就像在一个完好无损的桶上凿开了一个洞</p>
+<p><strong>解决方案：</strong></p>
+<ol>
+<li>设置热点数据永远不过期</li>
+<li>增加互斥锁</li>
+</ol>
+<hr>
+<p>一般避免以上情况发生我们从三个时间段去分析下：</p>
+<ul>
+<li>事前：<strong>Redis</strong> 高可用，主从+哨兵，<strong>Redis cluster</strong>，避免全盘崩溃。</li>
+<li>事中：本地 <strong>ehcache</strong> 缓存 + <strong>Hystrix</strong> 限流+降级，避免<strong>MySQL</strong>被打死。</li>
+<li>事后：<strong>Redis</strong> 持久化 <strong>RDB</strong>+<strong>AOF</strong>，一旦重启，自动从磁盘上加载数据，快速恢复缓存数据。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+        <tag>缓存</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>unique_ptr的一种实现方式</title>
     <url>/2020/10/12/unique-ptr%E7%9A%84%E4%B8%80%E7%A7%8D%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F/</url>
     <content><![CDATA[<h3 id="unique-ptr说明"><a href="#unique-ptr说明" class="headerlink" title="unique_ptr说明"></a><strong>unique_ptr说明</strong></h3><p>unique_ptr“唯一”拥有其所指对象，同一时刻只能有一个unique_ptr指向给定对象。相比与原始指针unique_ptr由于其RAII的特性，使得在出现异常的情况下，动态资源能得到释放。unique_ptr指针本身的生命周期：从unique_ptr指针创建时开始，直到离开作用域。离开作用域时，若其指向对象，则将其所指对象销毁。</p>

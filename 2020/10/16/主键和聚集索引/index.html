@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#fff">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/header.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/header.png?v=5.1.4" color="#fff">
+
+
+
+
+
+  <meta name="keywords" content="MySQL,数据库," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="lwl的博客" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="Test1：建表时，可不可以不声明主键？12345(1) CREATE TABLE user(	name VARCHAR(10)    ) ENGINE=INNODB;(2) INSERT INTO USER VALUES(&quot;hqnddw&quot;);(3) INSERT INTO USER VALUES(&quot;hqnddw&quot;);  连续执行上面的语句，执行结果是： A 建表语句(1)报错 B 插入语句(2)">
+<meta name="keywords" content="MySQL,数据库">
+<meta property="og:type" content="article">
+<meta property="og:title" content="主键和聚集索引">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;index.html">
+<meta property="og:site_name" content="lwl的博客">
+<meta property="og:description" content="Test1：建表时，可不可以不声明主键？12345(1) CREATE TABLE user(	name VARCHAR(10)    ) ENGINE=INNODB;(2) INSERT INTO USER VALUES(&quot;hqnddw&quot;);(3) INSERT INTO USER VALUES(&quot;hqnddw&quot;);  连续执行上面的语句，执行结果是： A 建表语句(1)报错 B 插入语句(2)">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016222251686.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016223354449.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016223656115.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016225501330.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016225818169.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016225925152.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016230146399.png">
+<meta property="og:updated_time" content="2020-10-16T15:04:20.296Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2020&#x2F;10&#x2F;16&#x2F;%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95&#x2F;image-20201016222251686.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/10/16/主键和聚集索引/"/>
+
+
+
+
+
+  <title>主键和聚集索引 | lwl的博客</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lwl的博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">To strive, to seek, to find, and not to yield</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lwl">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/1.jfif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lwl的博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">主键和聚集索引</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-10-16T22:20:01+08:00">
+                2020-10-16
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index">
+                    <span itemprop="name">MySQL</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="Test1：建表时，可不可以不声明主键？"><a href="#Test1：建表时，可不可以不声明主键？" class="headerlink" title="Test1：建表时，可不可以不声明主键？"></a>Test1：<strong>建表时，可不可以不声明主键？</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(1) <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="keyword">user</span>(</span><br><span class="line">	<span class="keyword">name</span> <span class="built_in">VARCHAR</span>(<span class="number">10</span>)</span><br><span class="line">    ) <span class="keyword">ENGINE</span>=<span class="keyword">INNODB</span>;</span><br><span class="line">(2) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span> <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br><span class="line">(3) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span> <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br></pre></td></tr></table></figure>
+
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 均不报错</em></p>
+<p><img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016222251686.png" alt="image-20201016222251686"></p>
+<p>实操如上，所以<strong>答案是【D 均不报错】</strong></p>
+<p>InnoDB必须要有聚集索引，行记录按照聚集索引物理上排序。必须要有聚集索引，并不代表一定要有主键。</p>
+<ol>
+<li>如果定义了主键，主键就是聚集索引；</li>
+<li>如果没有定义主键，第一个<strong>非空(not null)且唯一(unique)</strong>列是聚集索引；</li>
+<li>如果没有符合条件的列，会自动创建一个隐藏的row-id作为聚集索引；</li>
+</ol>
+<p><strong><em>本例就属于第三种情况</em></strong></p>
+<hr>
+<h3 id="Test2：建表时，可不可以不声明主键非空？"><a href="#Test2：建表时，可不可以不声明主键非空？" class="headerlink" title="Test2：建表时，可不可以不声明主键非空？"></a>Test2：<strong>建表时，可不可以不声明主键非空？</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">(1) <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="keyword">user</span>(</span><br><span class="line">	<span class="keyword">id</span> <span class="built_in">int</span> ,</span><br><span class="line">	<span class="keyword">name</span> <span class="built_in">VARCHAR</span>(<span class="number">10</span>),</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span>(<span class="keyword">id</span>)</span><br><span class="line">    ) <span class="keyword">ENGINE</span>=<span class="keyword">INNODB</span>;</span><br><span class="line">(2) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span>(<span class="keyword">name</span>) <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br><span class="line">(3) <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="keyword">USER</span>(<span class="keyword">name</span>) <span class="keyword">VALUES</span>(<span class="string">"hqnddw"</span>);</span><br></pre></td></tr></table></figure>
+
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 均不报错</em></p>
+<p><img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016223354449.png" alt="image-20201016223354449"></p>
+<p>实操如上，所以<strong>答案是：【B 插入语句(3)报错】</strong></p>
+<p>建表语句可以不主动设置主键非空（上例中的id），InnoDB会自动添加<strong>非空(not null)且唯一(unique)</strong>的限制。****</p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016223656115.png" alt="image-20201016223656115" style="zoom:80%;">
+
+<p>使用show create table查看，会发现主键列要求非空，所以第一次插入就产生错误</p>
+<hr>
+<h3 id="Test3：建表时，可不可以选择多个字段做主键"><a href="#Test3：建表时，可不可以选择多个字段做主键" class="headerlink" title="Test3：建表时，可不可以选择多个字段做主键"></a>Test3：<strong>建表时，可不可以选择多个字段做主键</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">（1）<span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">         <span class="keyword">id</span> <span class="built_in">int</span> <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         <span class="keyword">name</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         primary <span class="keyword">key</span>(<span class="keyword">id</span>, <span class="keyword">name</span>)</span><br><span class="line">)<span class="keyword">engine</span>=<span class="keyword">innodb</span>;</span><br><span class="line"></span><br><span class="line">（2）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span> <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">'lwl'</span>);</span><br><span class="line">（3）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span> <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">'hqnddw'</span>);</span><br><span class="line">（4）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span> <span class="keyword">values</span>(<span class="number">2</span>, <span class="string">'lwl'</span>);</span><br></pre></td></tr></table></figure>
+
+<p><em>建表时，声明联合主键(a,b)，插入若干元素，有些a重复，有些b重复</em></p>
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 插入语句(3)报错</em></p>
+<p><em>E 均不报错</em></p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016225501330.png" alt="image-20201016225501330" style="zoom:80%;">
+
+<p>实操如上，所以答案是：<strong>【E 均不报错】</strong></p>
+<p>这就是所谓的<strong>联合主键</strong>，不要求每个列唯一，而要求联合主键各个列的“组合唯一”。</p>
+<hr>
+<h3 id="Test4：可不可以主动插入自增主键？"><a href="#Test4：可不可以主动插入自增主键？" class="headerlink" title="Test4：可不可以主动插入自增主键？"></a>Test4：<strong>可不可以主动插入自增主键？</strong></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">（1）<span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">         <span class="keyword">id</span> <span class="built_in">int</span> auto_increment,</span><br><span class="line">         <span class="keyword">name</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         primary <span class="keyword">key</span>(<span class="keyword">id</span>)</span><br><span class="line"></span><br><span class="line">)<span class="keyword">engine</span>=<span class="keyword">innodb</span>;</span><br><span class="line"></span><br><span class="line">（2）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br><span class="line">（3）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">id</span>, <span class="keyword">name</span>) <span class="keyword">values</span>(<span class="number">10</span>,<span class="string">'lwl'</span>);</span><br><span class="line">（4）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br></pre></td></tr></table></figure>
+
+<p><em>建表时，自增ID为主键，插入若干元素，有些包含自增ID，有些不包含</em></p>
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 插入语句(3)报错</em></p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016225818169.png" alt="image-20201016225818169" style="zoom:80%;">
+
+<p>实操如上，所以答案是：<strong>【E 均不报错】</strong></p>
+<p>自增ID经常被用来作为主键，插入行记录时，不指定值，InnoDB自动增加。同时，也可以手动指定值：</p>
+<ol>
+<li>手动指定的值与已有值重复，则主键冲突；</li>
+<li>与已有值不冲突，则插入成功；</li>
+<li>未来不指定值插入，会从手动插入值往后继续递增；</li>
+</ol>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016225925152.png" alt="image-20201016225925152" style="zoom:80%;">
+
+<p>如上例，手动插入10后，未来插入的行会从11开始，自增ID中间出现空洞</p>
+<hr>
+<h3 id="Test5：建表时，可不可以使用联合自增主键？"><a href="#Test5：建表时，可不可以使用联合自增主键？" class="headerlink" title="Test5：建表时，可不可以使用联合自增主键？"></a>Test5：建表时，可不可以使用联合自增主键？</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">（1）<span class="keyword">create</span> <span class="keyword">table</span> <span class="keyword">user</span>(</span><br><span class="line">         <span class="keyword">id</span> <span class="built_in">int</span> auto_increment,</span><br><span class="line">         <span class="keyword">name</span> <span class="built_in">varchar</span>(<span class="number">10</span>) <span class="keyword">not</span> <span class="literal">null</span>,</span><br><span class="line">         primary <span class="keyword">key</span>(<span class="keyword">name</span>, <span class="keyword">id</span>)</span><br><span class="line">)<span class="keyword">engine</span>=<span class="keyword">innodb</span>;</span><br><span class="line"></span><br><span class="line">（2）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br><span class="line">（3）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">id</span>, <span class="keyword">name</span>) <span class="keyword">values</span>(<span class="number">10</span>,<span class="string">'lwl'</span>);</span><br><span class="line">（4）<span class="keyword">insert</span> <span class="keyword">into</span> <span class="keyword">user</span>(<span class="keyword">name</span>) <span class="keyword">values</span>(<span class="string">'lwl'</span>);</span><br></pre></td></tr></table></figure>
+
+<p><em>建表时，声明联合主键(a,b)，并且有一个是自增ID，插入若干元素，包含自增ID，有些不包含。</em></p>
+<p>连续执行上面的语句，执行结果是：</p>
+<p><em>A 建表语句(1)报错</em></p>
+<p><em>B 插入语句(2)报错</em></p>
+<p><em>C 插入语句(3)报错</em></p>
+<p><em>D 插入语句(3)报错</em></p>
+<p><em>E 均不报错</em></p>
+<img src="/2020/10/16/%E4%B8%BB%E9%94%AE%E5%92%8C%E8%81%9A%E9%9B%86%E7%B4%A2%E5%BC%95/image-20201016230146399.png" alt="image-20201016230146399" style="zoom:80%;">
+
+<p>实操如上，所以答案是：【A 建表语句(1)报错】</p>
+<p>这里不是指自增ID不能作为联合主键，而是如果作为联合主键，必须放在第一列，即：</p>
+<p><em>primary key(name,</em> <em>id**)</em></p>
+<p>改为</p>
+<p><em>primary key(<strong>id</strong>, name)</em></p>
+<hr>
+<p><strong>总结</strong></p>
+<p><strong>一：InnoDB建表时，可不可以不声明主键？</strong></p>
+<p>可以不声明主键，但必须要有聚集索引：</p>
+<ol>
+<li>有主键，主键是聚集索引；</li>
+<li>没有主键，首个非空唯一列是聚集索引；</li>
+<li>没有符合条件的列，row-id是聚集索引；</li>
+</ol>
+<p>主键和聚集索引不是一个东西，不要混淆。</p>
+<p> <strong>二：InnoDB建表时，可不可以不声明主键非空？</strong></p>
+<p>可以不声明主键非空，会自动加上非空限制。</p>
+<p> <strong>三：InnoDB建表时，可不可以选择多个字段做主键？</strong></p>
+<p>可以使用联合主键，组合列唯一即可。</p>
+<p><strong>四：InnoDB插入时，可不可以主动插入自增主键？</strong></p>
+<p>可以指定自增列的值，但可能导致空洞。</p>
+<p><strong>五：InnoDB建表时，可不可以使用联合自增主键？</strong></p>
+<p>可以，但自增ID必须在联合主键的第一列。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag"># 数据库</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/10/16/Redis%E6%8F%90%E4%BE%9B%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%BA%E5%88%B6/" rel="next" title="Redis提供的持久化机制">
+                <i class="fa fa-chevron-left"></i> Redis提供的持久化机制
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/10/16/%E4%BA%92%E8%81%94%E7%BD%91%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/" rel="prev" title="互联网高可用架构">
+                互联网高可用架构 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/1.jfif"
+                alt="lwl" />
+            
+              <p class="site-author-name" itemprop="name">lwl</p>
+              <p class="site-description motion-element" itemprop="description">对未来的真正慷慨，是把一切都献给现在</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%7C%7Carchive">
+              
+                  <span class="site-state-item-count">41</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">27</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/hqnddw" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:lwl173056@qq.com.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://twitter.com/hqnddw" target="_blank" title="Twitter">
+                      
+                        <i class="fa fa-fw fa-twitter"></i>Twitter</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://instagram.com/hqnddw" target="_blank" title="Instagram">
+                      
+                        <i class="fa fa-fw fa-instagram"></i>Instagram</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Test1：建表时，可不可以不声明主键？"><span class="nav-number">1.</span> <span class="nav-text">Test1：建表时，可不可以不声明主键？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Test2：建表时，可不可以不声明主键非空？"><span class="nav-number">2.</span> <span class="nav-text">Test2：建表时，可不可以不声明主键非空？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Test3：建表时，可不可以选择多个字段做主键"><span class="nav-number">3.</span> <span class="nav-text">Test3：建表时，可不可以选择多个字段做主键</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Test4：可不可以主动插入自增主键？"><span class="nav-number">4.</span> <span class="nav-text">Test4：可不可以主动插入自增主键？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Test5：建表时，可不可以使用联合自增主键？"><span class="nav-number">5.</span> <span class="nav-text">Test5：建表时，可不可以使用联合自增主键？</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2019 &mdash; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lwl</span>
+
+  
+</div>
+
+<!-- 
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Gemini</a> v5.1.4</div>
+ -->
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
